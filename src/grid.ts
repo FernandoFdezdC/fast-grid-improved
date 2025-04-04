@@ -52,6 +52,8 @@ export class Grid {
   viewportHeight: number;
   numCols: number;
 
+  columnWidths: number[] = [];
+
   resizeObserver: ResizeObserver;
   constructor(container: HTMLDivElement, rows: Rows, headers: string[]) {
     this.container = container;
@@ -89,6 +91,38 @@ export class Grid {
         "SharedArrayBuffer is not available. Grid might not work properly."
       );
     }
+
+    this.computeColumnWidths();
+  }
+  public computeColumnWidths() {
+    const tempEl = document.createElement('div');
+    tempEl.style.cssText = `
+      position: absolute;
+      visibility: hidden;
+      white-space: nowrap;
+      font-family: monospace;
+      font-size: 14px;
+      padding-left: 6px;
+    `;
+    document.body.appendChild(tempEl);
+
+    this.columnWidths = new Array(this.numCols).fill(CELL_WIDTH);
+
+    // 1. Medir headers (se mantiene igual)
+    this.headerRows[1].cells.forEach((cell, i) => {
+      tempEl.textContent = String(cell.v);
+      this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42);
+    });
+
+    // 2. Medir celdas
+    this.rowManager.rows.forEach(row => {
+      row.cells.forEach((cell, i) => {
+        tempEl.textContent = String(cell.v);
+        this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 12);
+      });
+    });
+
+    document.body.removeChild(tempEl);
   }
   createHeader(headers: string[]) {
     let offset = 0;
@@ -122,17 +156,49 @@ export class Grid {
   getState = (): GridState => {
     const numRows = this.rowManager.getNumRows();
 
-    const cellsPerRow = Math.ceil(this.viewportWidth / CELL_WIDTH) + 1;
-    const tableWidth = this.numCols * CELL_WIDTH;
+    const validColumns = this.columnWidths.slice(0, this.numCols); // Asegura sincronía
+    const starts = [0];
+    for (let i = 0; i < this.numCols; i++) {  // Usar this.numCols en lugar de array length
+      starts.push(starts[i] + validColumns[i]);
+    }
+    const tableWidth = starts[this.numCols];
 
     // full viewport, and an additional row top and bottom to simulate scrolling
     const rowsPerViewport = Math.ceil(this.viewportHeight / ROW_HEIGHT);
 
     const tableHeight = numRows * ROW_HEIGHT;
 
-    const startCell = Math.floor(this.offsetX / CELL_WIDTH);
+    let startCell = 0;
+    let low = 0;
+    let high = starts.length - 1;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      if (starts[mid] <= this.offsetX) {
+        startCell = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+    startCell = Math.min(startCell, this.numCols - 1);
+
+    const cellOffset = -(this.offsetX - starts[startCell]);
+
+    const endPosition = starts[startCell] + this.viewportWidth;
+    let endCellIdx = startCell;
+    low = startCell;
+    high = starts.length - 1;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      if (starts[mid] <= endPosition) {
+        endCellIdx = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+    const cellsPerRow = (endCellIdx - startCell) + 2; // +1 original +1 buffer
     const endCell = Math.min(startCell + cellsPerRow, this.numCols);
-    const cellOffset = -Math.floor(this.offsetX % CELL_WIDTH);
 
     // start to end of rows to render, along with the row offset to simulate scrolling
     const startRow = Math.floor(this.offsetY / ROW_HEIGHT);

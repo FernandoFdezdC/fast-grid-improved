@@ -1,6 +1,6 @@
 import { Grid } from "./grid";
 
-export const CELL_WIDTH = 200;
+export const CELL_WIDTH = 50;
 
 export type CellComponent = {
   id: number;
@@ -31,10 +31,16 @@ export class StringCell implements CellComponent {
     // rendering monospace text with text smoothing
     // https://codesandbox.io/s/performance-test-disabling-text-antialiasing-om6f3q?file=/index.js
     // NOTE(gab): align-items actually has a super slight imapact on Layerize time, using padding for now
-    this.el.className =
-      "flex h-full pt-[7px] text-black box-border cursor-default pl-[6px] absolute left-0 font-mono text-[14px]";
+    this.el.className = 
+      "flex h-full pt-[7px] text-black box-border cursor-default pl-[6px] absolute left-0 font-mono text-[14px] truncate";
     this.el.style.width = `${CELL_WIDTH}px`;
     this.el.style.backgroundColor = "transparent";
+    
+    // Añadir estos estilos complementarios
+    this.el.style.overflow = "hidden";
+    this.el.style.textOverflow = "ellipsis";
+    this.el.style.whiteSpace = "nowrap";
+    
 
     this.setOffset(this._offset, true);
     this.setContent(text);
@@ -137,6 +143,7 @@ export class HeaderCell implements CellComponent {
   };
   setContent(text: string | number) {
     this.el.innerText = String(text);
+    this.syncToFilter();
   }
   setOffset(offset: number, force: boolean = false) {
     if (force || offset !== this._offset) {

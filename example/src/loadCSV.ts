@@ -48,10 +48,16 @@ export const loadCSV = async (
 
     rows.push({ id: rowIdx, cells } satisfies Row);
   }
-
+  
   await yieldControl("background");
   grid.rowManager.setRows(rows);
   cb();
+
+  // Rerender grid:
+  grid.computeColumnWidths();
+  grid.renderViewportRows();
+  grid.renderViewportCells();
+  grid.scrollbar.refreshThumb();
 };
 
 // Función para obtener el archivo desde public/

@@ -89,10 +89,14 @@ export class RowComponent {
   renderCells() {
     const state = this.grid.getState();
 
+    let currentOffset = state.cellOffset; // Usar el offset calculado basado en anchos reales
+    let accumulatedWidth = 0;
+
     const renderCells: Record<string, true> = {};
     for (let i = state.startCell; i < state.endCell; i++) {
-      const cell = this.cells[i];
-      renderCells[cell.id] = true;
+        const cell = this.cells[i];
+        renderCells[cell.id] = true;
+        accumulatedWidth += this.grid.columnWidths[i]; // Acumular ancho real
     }
 
     const removeCells: CellComponent[] = [];
@@ -104,33 +108,42 @@ export class RowComponent {
       removeCells.push(cell);
     }
 
+    // Resetear el acumulador para el cálculo preciso
+    currentOffset = state.cellOffset;
+    
     for (let i = state.startCell; i < state.endCell; i++) {
       const cell = this.cells[i]!;
-      const offset = state.cellOffset + (i - state.startCell) * CELL_WIDTH;
+      const columnWidth = this.grid.columnWidths[i]; // Ancho real de la columna
 
       const existingCell = this.cellComponentMap[cell.id];
       if (existingCell != null) {
-        existingCell.setOffset(offset);
-        continue;
+          existingCell.setOffset(currentOffset);
+          existingCell.el.style.width = `${columnWidth}px`; // Actualizar ancho
+          currentOffset += columnWidth; // Mover offset
+          continue;
       }
 
       const reuseCell = removeCells.pop();
       if (reuseCell != null) {
-        delete this.cellComponentMap[reuseCell.id];
-        reuseCell.reuse(cell.id, offset, cell.v, i);
-        this.cellComponentMap[reuseCell.id] = reuseCell;
-        continue;
+          delete this.cellComponentMap[reuseCell.id];
+          reuseCell.reuse(cell.id, currentOffset, cell.v, i); // Pasar índice
+          reuseCell.el.style.width = `${columnWidth}px`; // Forzar actualización
+          this.cellComponentMap[reuseCell.id] = reuseCell;
+          currentOffset += columnWidth;
+          continue;
       }
 
       const newCell = new this.CellRenderer(
-        cell.id,
-        offset,
-        cell.v,
-        this.grid,
-        i
+          cell.id,
+          currentOffset,
+          cell.v,
+          this.grid,
+          i // Pasar índice de columna
       );
+      newCell.el.style.width = `${columnWidth}px`; // Set real column width
       this.el.appendChild(newCell.el);
       this.cellComponentMap[newCell.id] = newCell;
+      currentOffset += columnWidth;
     }
 
     for (const cell of removeCells) {
