@@ -151,8 +151,14 @@ export class HeaderCell implements CellComponent {
     }
     this._offset = offset;
   }
-  reuse(id: number, offset: number, text: string | number) {
+  reuse = (
+    id: number,
+    offset: number,
+    text: string | number,
+    index: number
+  ) => {
     this.id = id;
+    this.index = index;
     this.setOffset(offset, true);
     this.setContent(text);
     this.syncToFilter();
@@ -164,10 +170,10 @@ export class HeaderCell implements CellComponent {
     if (sort == null) {
       this.arrow.textContent = "";
     } else if (sort.direction === "descending") {
-      console.log("descending");
+      console.log("descendingHeader");
       this.arrow.textContent = "⏷";
     } else if (sort.direction === "ascending") {
-      console.log("ascending");
+      console.log("ascendingHeader");
       this.arrow.textContent = "⏶";
     }
   };
@@ -179,7 +185,7 @@ export class FilterCell implements CellComponent {
   id: number;
   el: HTMLDivElement;
   input: HTMLInputElement;
-  // arrow: SVGSVGElement;
+  arrow: SVGSVGElement;
   _offset: number;
 
   constructor(
@@ -210,40 +216,27 @@ export class FilterCell implements CellComponent {
     this.el.appendChild(this.input);
 
     // --------------ARROW FUNCTIONALITY--------------
-    // const arrowContainer = document.createElement("div");
-    // arrowContainer.className =
-    //   "flex items-center justify-center w-[35px] h-[28px] cursor-pointer";
-    // arrowContainer.addEventListener("click", this.onArrowClick);
+    const arrowContainer = document.createElement("div");
+    arrowContainer.className =
+      "flex items-center justify-center w-[35px] h-[28px] cursor-pointer";
+    // ordering when clicking on the whole container
+    arrowContainer.addEventListener("click", this.onArrowClick);
 
-    // this.arrow = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    // this.arrow.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    // this.arrow.setAttribute("viewBox", "0 0 24 24");
-    // this.arrow.setAttribute(
-    //   "class",
-    //   "w-5 h-5 fill-current transition-transform duration-200 rotate-90"
-    // );
+    this.arrow = document.createElement("span") as any;
+    arrowContainer.className = "flex items-center justify-center w-[35px] h-full cursor-pointer";
+    this.arrow.textContent = ""; // sin orden inicialmente
 
-    // const mainPath = document.createElementNS(
-    //   "http://www.w3.org/2000/svg",
-    //   "path"
-    // );
-    // mainPath.setAttribute(
-    //   "d",
-    //   "M12 3.75l-6.5 6.5L7 11.75l3.5-3.5V20h3V8.25l3.5 3.5 1.5-1.5z"
-    // );
-    // this.arrow.appendChild(mainPath);
+    const arrowHead = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    arrowHead.setAttribute("d", "M12 5.5L7.5 10h9z");
+    arrowHead.setAttribute("fill", "currentColor");
+    arrowHead.setAttribute("opacity", "0.3");
+    this.arrow.appendChild(arrowHead);
 
-    // const arrowHead = document.createElementNS(
-    //   "http://www.w3.org/2000/svg",
-    //   "path"
-    // );
-    // arrowHead.setAttribute("d", "M12 5.5L7.5 10h9z");
-    // arrowHead.setAttribute("fill", "currentColor");
-    // arrowHead.setAttribute("opacity", "0.3");
-    // this.arrow.appendChild(arrowHead);
-
-    // arrowContainer.appendChild(this.arrow);
-    // this.el.appendChild(arrowContainer);
+    arrowContainer.appendChild(this.arrow);
+    this.el.appendChild(arrowContainer);
     // --------------ARROW FUNCTIONALITY--------------
 
     this.syncToFilter();
@@ -257,42 +250,42 @@ export class FilterCell implements CellComponent {
     }
     this.grid.rowManager.runFilter();
   };
-  // private onArrowClick = () => {
-  //   const idx = this.grid.rowManager.view.sort.findIndex(
-  //     (sort) => sort.column === this.index
-  //   );
-  //   const currentSort = idx !== -1 ? this.grid.rowManager.view.sort[idx] : null;
-  //   if (currentSort == null) {
-  //     this.grid.rowManager.view.sort.push({
-  //       direction: "descending",
-  //       column: this.index,
-  //     });
-  //     this.arrow.style.transform = "rotate(180deg)";
-  //   } else if (currentSort.direction === "descending") {
-  //     currentSort.direction = "ascending";
-  //     this.arrow.style.transform = "rotate(0deg)";
-  //   } else {
-  //     this.grid.rowManager.view.sort.splice(idx, 1);
-  //     this.arrow.style.transform = "rotate(90deg)";
-  //   }
-  //   this.grid.rowManager.runSort();
-  // };
+  private onArrowClick = () => {
+    const idx = this.grid.rowManager.view.sort.findIndex(
+      (sort) => sort.column === this.index
+    );
+    const currentSort = idx !== -1 ? this.grid.rowManager.view.sort[idx] : null;
+    if (currentSort == null) {
+      this.grid.rowManager.view.sort.push({
+        direction: "descending",
+        column: this.index,
+      });
+      this.arrow.textContent = "⏷";
+    } else if (currentSort.direction === "descending") {
+      currentSort.direction = "ascending";
+      this.arrow.textContent = "⏶";
+    } else {
+      this.grid.rowManager.view.sort.splice(idx, 1);
+      this.arrow.textContent = "";
+    }
+    this.grid.rowManager.runSort();
+  };
   syncToFilter = () => {
     if (this.index in this.grid.rowManager.view.filter) {
       this.input.value = this.grid.rowManager.view.filter[this.index];
     } else {
       this.input.value = "";
     }
-    // const sort = this.grid.rowManager.view.sort.find(
-    //   (sort) => sort.column === this.index
-    // );
-    // if (sort == null) {
-    //   this.arrow.style.transform = "rotate(90deg)";
-    // } else if (sort.direction === "descending") {
-    //   this.arrow.style.transform = "rotate(180deg)";
-    // } else {
-    //   this.arrow.style.transform = "rotate(0deg)";
-    // }
+    const sort = this.grid.rowManager.view.sort.find(
+      (sort) => sort.column === this.index
+    );
+    if (sort == null) {
+      this.arrow.textContent = "";
+    } else if (sort.direction === "descending") {
+      this.arrow.textContent = "⏷";
+    } else if (sort.direction === "ascending") {
+      this.arrow.textContent = "⏶";
+    }
   };
   setContent = () => {
     this.syncToFilter();

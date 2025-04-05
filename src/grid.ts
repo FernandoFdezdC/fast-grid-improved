@@ -29,7 +29,7 @@ interface GridState {
   cellsPerRow: number;
 }
 
-const HEADER_ID = 99999999999999; // very dumb
+const HEADER_ID = -99999999999999; // very dumb
 
 export class Grid {
   state: GridState;
@@ -108,21 +108,21 @@ export class Grid {
 
     this.columnWidths = new Array(this.numCols).fill(CELL_WIDTH);
 
-    // // 1. Medir headers (se mantiene igual)
-    // this.headerRows[1].cells.forEach((cell, i) => {
-    //   tempEl.textContent = String(cell.v);
-    //   this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42);
-    // });
     // 1. Medir headers (se mantiene igual)
     this.headerRows[1].cells.forEach((cell, i) => {
       tempEl.textContent = String(cell.v);
-      // Si existe cell.arrow y su contenido es "⏷", usar un padding extra
-      let extraPadding = 0;
-      if (cell instanceof HeaderCell){
-        extraPadding = cell.arrow && cell.arrow.textContent !== "" ? 52 : 42;
-      }
-      this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42 + extraPadding);
+      this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42);
     });
+    // // 1. Medir headers (se mantiene igual)
+    // this.headerRows[1].cells.forEach((cell, i) => {
+    //   tempEl.textContent = String(cell.v);
+    //   // Si existe cell.arrow y su contenido es "⏷", usar un padding extra
+    //   let extraPadding = 0;
+    //   if (cell instanceof HeaderCell){
+    //     extraPadding = cell.arrow && cell.arrow.textContent !== "" ? 52 : 42;
+    //   }
+    //   this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42 + extraPadding);
+    // });
 
     // 2. Medir celdas
     this.rowManager.rows.forEach(row => {
@@ -145,7 +145,7 @@ export class Grid {
       })),
       offset,
       FilterCell,
-      1
+      -2
     );
     const headerRow = new RowComponent(
       this,
@@ -156,7 +156,7 @@ export class Grid {
       })),
       (offset += ROW_HEIGHT),
       HeaderCell,
-      2
+      -1
     );
 
     this.container.appendChild(toolsRow.el);
@@ -403,6 +403,10 @@ export class Grid {
         console.error("row should exist. did you render rows first?");
         continue;
       }
+      // if (rowComponent.CellRenderer == FilterCell){
+      //   console.log(rowComponent);
+      //   console.log("FILTER CELL: ", rowComponent);
+      // }
       rowComponent.renderCells();
     }
 

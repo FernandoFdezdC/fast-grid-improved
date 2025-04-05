@@ -42,7 +42,6 @@ export class RowComponent {
     this.id = id;
     this.cells = cells;
     this._offset = offset;
-    this.CellRenderer = CellRenderer;
     this.cellComponentMap = {};
     this.absoluteIndex = absoluteIndex;
 
@@ -62,10 +61,12 @@ export class RowComponent {
       this.el.style.backgroundColor = "#f0f0f0";
     }
 
-    // Hack temporal para headers
+    // eh temporary header hack, make this passable
     if (CellRenderer !== StringCell) {
       this.el.style.zIndex = "1";
     }
+
+    this.CellRenderer = CellRenderer;
 
     this.setOffset(this._offset, true);
     this.renderCells();
@@ -125,8 +126,18 @@ export class RowComponent {
 
       const reuseCell = removeCells.pop();
       if (reuseCell != null) {
+        // if (this.CellRenderer == HeaderCell){
+        //   console.log("REUSE HEADER CELL: ", reuseCell, typeof reuseCell);
+        //   console.log("Index: ", reuseCell.id);
+        //   console.log(cell.id);
+        // }
         delete this.cellComponentMap[reuseCell.id];
         reuseCell.reuse(cell.id, currentOffset, cell.v, i); // Pasar índice
+        // if (this.CellRenderer == HeaderCell){
+        //   console.log("UPDATED REUSE HEADER CELL: ", reuseCell, typeof reuseCell);
+        //   console.log("Index: ", reuseCell.id);
+        //   console.log(cell.id);
+        // }
         reuseCell.el.style.width = `${columnWidth}px`; // Forzar actualización
         this.cellComponentMap[reuseCell.id] = reuseCell;
         currentOffset += columnWidth;
@@ -140,6 +151,13 @@ export class RowComponent {
           this.grid,
           i // Pasar índice de columna
       );
+      // if (newCell instanceof StringCell){
+      //   console.log("ROW NUMBER: ", this.absoluteIndex);
+      //   console.log("TYPE: StringCell");
+      // } else {
+      //   console.log("ROW NUMBER: ", this.absoluteIndex);
+      //   console.log("TYPE: Header/FilterCell");
+      // }
       newCell.el.style.width = `${columnWidth}px`; // Set real column width
       this.el.appendChild(newCell.el);
       this.cellComponentMap[newCell.id] = newCell;
