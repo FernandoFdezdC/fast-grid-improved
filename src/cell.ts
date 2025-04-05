@@ -173,10 +173,8 @@ export class HeaderCell implements CellComponent {
     if (sort == null) {
       this.arrow.textContent = "";
     } else if (sort.direction === "descending") {
-      console.log("descendingHeader");
       this.arrow.textContent = "⏷";
     } else if (sort.direction === "ascending") {
-      console.log("ascendingHeader");
       this.arrow.textContent = "⏶";
     }
   };

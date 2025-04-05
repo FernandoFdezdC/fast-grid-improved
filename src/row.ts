@@ -126,18 +126,8 @@ export class RowComponent {
 
       const reuseCell = removeCells.pop();
       if (reuseCell != null) {
-        // if (this.CellRenderer == HeaderCell){
-        //   console.log("REUSE HEADER CELL: ", reuseCell, typeof reuseCell);
-        //   console.log("Index: ", reuseCell.id);
-        //   console.log(cell.id);
-        // }
         delete this.cellComponentMap[reuseCell.id];
         reuseCell.reuse(cell.id, currentOffset, cell.v, i); // Pasar índice
-        // if (this.CellRenderer == HeaderCell){
-        //   console.log("UPDATED REUSE HEADER CELL: ", reuseCell, typeof reuseCell);
-        //   console.log("Index: ", reuseCell.id);
-        //   console.log(cell.id);
-        // }
         reuseCell.el.style.width = `${columnWidth}px`; // Forzar actualización
         this.cellComponentMap[reuseCell.id] = reuseCell;
         currentOffset += columnWidth;
@@ -151,16 +141,6 @@ export class RowComponent {
           this.grid,
           i // Pasar índice de columna
       );
-      if (newCell instanceof StringCell){
-        // console.log(newCell, "ROW NUMBER: ", this.absoluteIndex);
-        // console.log("TYPE: StringCell");
-      } else if (newCell instanceof HeaderCell) {
-        console.log(newCell, "ROW NUMBER: ", this.absoluteIndex);
-        console.log("TYPE: HeaderCell");
-      } else if (newCell instanceof FilterCell) {
-        console.log(newCell, "ROW NUMBER: ", this.absoluteIndex);
-        console.log("TYPE: FilterCell");
-      }
       newCell.el.style.width = `${columnWidth}px`; // Set real column width
       this.el.appendChild(newCell.el);
       this.cellComponentMap[newCell.id] = newCell;

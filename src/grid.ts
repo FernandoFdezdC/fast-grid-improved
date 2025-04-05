@@ -403,10 +403,6 @@ export class Grid {
         console.error("row should exist. did you render rows first?");
         continue;
       }
-      // if (rowComponent.CellRenderer == FilterCell){
-      //   console.log(rowComponent);
-      //   console.log("FILTER CELL: ", rowComponent);
-      // }
       rowComponent.renderCells();
     }
 

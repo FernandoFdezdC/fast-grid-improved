@@ -1,9 +1,8 @@
 {
-  "name": "grid",
-  "version": "0.0.1",
-  "private": false,
+  "name": "test",
+  "private": true,
+  "version": "0.0.0",
   "scripts": {
-    "prepare": "npm install",
     "ts": "tsc --watch --noEmit",
     "predeploy": "cd example && npm run build"
   },

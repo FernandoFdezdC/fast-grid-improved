@@ -80,24 +80,19 @@ const getSortComparisonFn = (
   config: ["ascending" | "descending" | null, number][]
 ) => {
   return (a: Row, b: Row) => {
-    for (let col = 0; col < config.length; col++) {
-      const [direction, colIndex] = config[col];
-      // const colIndex = config[col].column;
-      if (direction === null) {
-        continue;
-      }
-      if (direction === "ascending") {
-        if (a.cells[colIndex].v > b.cells[colIndex].v) {
-          return 1;
-        } else if (a.cells[colIndex].v < b.cells[colIndex].v) {
-          return -1;
-        }
-      }
-      if (a.cells[colIndex].v < b.cells[colIndex].v) {
-        return 1;
-      } else if (a.cells[colIndex].v > b.cells[colIndex].v) {
-        return -1;
-      }
+    for (const [direction, colIndex] of config) {
+      if (direction === null) continue;
+
+      const type = cache.columnTypes.get(colIndex) || 'string';
+      const aVal = a.cells[colIndex]?.v;
+      const bVal = b.cells[colIndex]?.v;
+
+      let comparison = type === 'number' 
+        ? Number(aVal) - Number(bVal) 
+        : String(aVal).localeCompare(String(bVal));
+
+      if (direction === "descending") comparison = -comparison;
+      if (comparison !== 0) return comparison;
     }
     return 0;
   };
@@ -223,6 +218,7 @@ let currentFilterId: [number] = [0];
 const cache = {
   sort: null as Row[] | null,
   sortKey: null as string | null,
+  columnTypes: new Map<number, 'number' | 'string'>(), // Nueva propiedad
 };
 
 const handleEvent = async (event: Message) => {
@@ -261,6 +257,26 @@ const handleEvent = async (event: Message) => {
     case "set-rows": {
       rowData = message.rows;
       cache.sort = null;
+      
+      // Resetear y detectar tipos de columna
+      cache.columnTypes.clear();
+      if (rowData.length > 0) {
+        const sampleSize = Math.min(100, rowData.length); // Muestra de hasta 100 filas
+        for (let col = 0; col < rowData[0].cells.length; col++) {
+          let isNumeric = true;
+          
+          // Verificar solo una muestra de filas para eficiencia
+          for (let i = 0; i < sampleSize; i++) {
+            const val = rowData[i].cells[col]?.v;
+            if (typeof val !== 'number' && isNaN(Number(val)) ) {
+              isNumeric = false;
+              break;
+            }
+          }
+          
+          cache.columnTypes.set(col, isNumeric ? 'number' : 'string');
+        }
+      }
       return;
     }
   }
