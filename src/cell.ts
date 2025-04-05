@@ -67,7 +67,8 @@ export class HeaderCell implements CellComponent {
   id: number;
   el: HTMLDivElement;
   arrow: SVGSVGElement;
-  index: number
+  index: number;
+  textDisplay: HTMLDivElement;
   _offset: number;
 
   constructor(id: number,
@@ -85,15 +86,17 @@ export class HeaderCell implements CellComponent {
     this.el.className =
       "flex h-full pt-[5px] border-[0] border-r border-b-2 border-solid border-gray-700 text-gray-800 box-border cursor-pointer pl-[6px] absolute left-0 overflow-clip";
     this.el.style.width = `${CELL_WIDTH}px`;
-
-    // extra header styles
     this.el.style.backgroundColor = "white";
-    this.el.style.fontWeight = "500";
-    this.el.style.fontFamily = "monospace";
-    this.el.style.fontSize = "15px";
+
+    // text display
+    this.textDisplay = document.createElement("div");
+    this.textDisplay.textContent = String(text);
+    this.textDisplay.className = "h-full text-[16px] select-none";
+    this.textDisplay.style.fontFamily = "monospace";
+    this.el.appendChild(this.textDisplay);
 
     this.setOffset(this._offset, true);
-    this.setContent(text);
+    // this.setContent(text);
 
     // --------------ARROW FUNCTIONALITY--------------
     const arrowContainer = document.createElement("div");
@@ -143,7 +146,7 @@ export class HeaderCell implements CellComponent {
     this.grid.rowManager.runSort();
   };
   setContent(text: string | number) {
-    this.el.innerText = String(text);
+    this.textDisplay.textContent = String(text); // Actualiza el texto
   }
   setOffset(offset: number, force: boolean = false) {
     if (force || offset !== this._offset) {
@@ -185,7 +188,7 @@ export class FilterCell implements CellComponent {
   id: number;
   el: HTMLDivElement;
   input: HTMLInputElement;
-  arrow: SVGSVGElement;
+  // arrow: SVGSVGElement;
   _offset: number;
 
   constructor(
@@ -216,27 +219,27 @@ export class FilterCell implements CellComponent {
     this.el.appendChild(this.input);
 
     // --------------ARROW FUNCTIONALITY--------------
-    const arrowContainer = document.createElement("div");
-    arrowContainer.className =
-      "flex items-center justify-center w-[35px] h-[28px] cursor-pointer";
-    // ordering when clicking on the whole container
-    arrowContainer.addEventListener("click", this.onArrowClick);
+    // const arrowContainer = document.createElement("div");
+    // arrowContainer.className =
+    //   "flex items-center justify-center w-[35px] h-[28px] cursor-pointer";
+    // // ordering when clicking on the whole container
+    // arrowContainer.addEventListener("click", this.onArrowClick);
 
-    this.arrow = document.createElement("span") as any;
-    arrowContainer.className = "flex items-center justify-center w-[35px] h-full cursor-pointer";
-    this.arrow.textContent = ""; // sin orden inicialmente
+    // this.arrow = document.createElement("span") as any;
+    // arrowContainer.className = "flex items-center justify-center w-[35px] h-full cursor-pointer";
+    // this.arrow.textContent = ""; // sin orden inicialmente
 
-    const arrowHead = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "path"
-    );
-    arrowHead.setAttribute("d", "M12 5.5L7.5 10h9z");
-    arrowHead.setAttribute("fill", "currentColor");
-    arrowHead.setAttribute("opacity", "0.3");
-    this.arrow.appendChild(arrowHead);
+    // const arrowHead = document.createElementNS(
+    //   "http://www.w3.org/2000/svg",
+    //   "path"
+    // );
+    // arrowHead.setAttribute("d", "M12 5.5L7.5 10h9z");
+    // arrowHead.setAttribute("fill", "currentColor");
+    // arrowHead.setAttribute("opacity", "0.3");
+    // this.arrow.appendChild(arrowHead);
 
-    arrowContainer.appendChild(this.arrow);
-    this.el.appendChild(arrowContainer);
+    // arrowContainer.appendChild(this.arrow);
+    // this.el.appendChild(arrowContainer);
     // --------------ARROW FUNCTIONALITY--------------
 
     this.syncToFilter();
@@ -250,42 +253,42 @@ export class FilterCell implements CellComponent {
     }
     this.grid.rowManager.runFilter();
   };
-  private onArrowClick = () => {
-    const idx = this.grid.rowManager.view.sort.findIndex(
-      (sort) => sort.column === this.index
-    );
-    const currentSort = idx !== -1 ? this.grid.rowManager.view.sort[idx] : null;
-    if (currentSort == null) {
-      this.grid.rowManager.view.sort.push({
-        direction: "descending",
-        column: this.index,
-      });
-      this.arrow.textContent = "⏷";
-    } else if (currentSort.direction === "descending") {
-      currentSort.direction = "ascending";
-      this.arrow.textContent = "⏶";
-    } else {
-      this.grid.rowManager.view.sort.splice(idx, 1);
-      this.arrow.textContent = "";
-    }
-    this.grid.rowManager.runSort();
-  };
+  // private onArrowClick = () => {
+  //   const idx = this.grid.rowManager.view.sort.findIndex(
+  //     (sort) => sort.column === this.index
+  //   );
+  //   const currentSort = idx !== -1 ? this.grid.rowManager.view.sort[idx] : null;
+  //   if (currentSort == null) {
+  //     this.grid.rowManager.view.sort.push({
+  //       direction: "descending",
+  //       column: this.index,
+  //     });
+  //     this.arrow.textContent = "⏷";
+  //   } else if (currentSort.direction === "descending") {
+  //     currentSort.direction = "ascending";
+  //     this.arrow.textContent = "⏶";
+  //   } else {
+  //     this.grid.rowManager.view.sort.splice(idx, 1);
+  //     this.arrow.textContent = "";
+  //   }
+  //   this.grid.rowManager.runSort();
+  // };
   syncToFilter = () => {
     if (this.index in this.grid.rowManager.view.filter) {
       this.input.value = this.grid.rowManager.view.filter[this.index];
     } else {
       this.input.value = "";
     }
-    const sort = this.grid.rowManager.view.sort.find(
-      (sort) => sort.column === this.index
-    );
-    if (sort == null) {
-      this.arrow.textContent = "";
-    } else if (sort.direction === "descending") {
-      this.arrow.textContent = "⏷";
-    } else if (sort.direction === "ascending") {
-      this.arrow.textContent = "⏶";
-    }
+    // const sort = this.grid.rowManager.view.sort.find(
+    //   (sort) => sort.column === this.index
+    // );
+    // if (sort == null) {
+    //   this.arrow.textContent = "";
+    // } else if (sort.direction === "descending") {
+    //   this.arrow.textContent = "⏷";
+    // } else if (sort.direction === "ascending") {
+    //   this.arrow.textContent = "⏶";
+    // }
   };
   setContent = () => {
     this.syncToFilter();

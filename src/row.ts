@@ -151,13 +151,16 @@ export class RowComponent {
           this.grid,
           i // Pasar índice de columna
       );
-      // if (newCell instanceof StringCell){
-      //   console.log("ROW NUMBER: ", this.absoluteIndex);
-      //   console.log("TYPE: StringCell");
-      // } else {
-      //   console.log("ROW NUMBER: ", this.absoluteIndex);
-      //   console.log("TYPE: Header/FilterCell");
-      // }
+      if (newCell instanceof StringCell){
+        // console.log(newCell, "ROW NUMBER: ", this.absoluteIndex);
+        // console.log("TYPE: StringCell");
+      } else if (newCell instanceof HeaderCell) {
+        console.log(newCell, "ROW NUMBER: ", this.absoluteIndex);
+        console.log("TYPE: HeaderCell");
+      } else if (newCell instanceof FilterCell) {
+        console.log(newCell, "ROW NUMBER: ", this.absoluteIndex);
+        console.log("TYPE: FilterCell");
+      }
       newCell.el.style.width = `${columnWidth}px`; // Set real column width
       this.el.appendChild(newCell.el);
       this.cellComponentMap[newCell.id] = newCell;
