@@ -7,7 +7,7 @@
   "files": ["dist", "src"],
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build",
+    "prepack": "npm run build",
     "ts": "tsc --watch --noEmit",
     "predeploy": "cd example && npm run build"
   },
