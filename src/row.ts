@@ -1,5 +1,5 @@
 import {
-  CELL_WIDTH,
+  // CELL_WIDTH,
   CellComponent,
   HeaderCell,
   FilterCell,

@@ -1,4 +1,5 @@
 import { isTimeToYield, yieldControl } from "main-thread-scheduling";
+import type { SchedulingStrategy } from "main-thread-scheduling";
 import { Row } from "../row";
 
 interface FilterRows {
@@ -28,8 +29,8 @@ export const filterRows = async ({
       return "canceled";
     }
     // NOTE(gab): this is the magic - run work sync is possible, awaits if main thread busy
-    if (isTimeToYield("user-visible")) {
-      await yieldControl("user-visible");
+    if (isTimeToYield("user-visible" as SchedulingStrategy)) {
+      await yieldControl("user-visible" as SchedulingStrategy);
       if (shouldCancel()) {
         return "canceled";
       }
