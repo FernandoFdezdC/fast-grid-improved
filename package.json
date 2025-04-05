@@ -1,8 +1,13 @@
 {
-  "name": "grid",
-  "private": false,
-  "version": "0.0.0",
+  "name": "fast-grid-improved",
+  "private": true,
+  "version": "0.0.1",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src"],
   "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
     "ts": "tsc --watch --noEmit",
     "predeploy": "cd example && npm run build"
   },
