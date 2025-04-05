@@ -1,10 +1,15 @@
 {
-  "name": "test",
-  "private": true,
-  "version": "0.0.0",
+  "name": "grid",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "type": "module",
+  "files": [
+    "dist",
+    "package.json"
+  ],
   "scripts": {
-    "ts": "tsc --watch --noEmit",
-    "predeploy": "cd example && npm run build"
+    "build": "tsc && vite build",
+    "prepublish": "npm run build"
   },
   "dependencies": {
     "@types/timsort": "^0.3.3",

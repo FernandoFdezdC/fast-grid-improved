@@ -10,7 +10,7 @@ export const FastGrid = () => {
 
   const [grid, setGrid] = useState<Grid | null>(null);
   const [speed, setSpeed] = useState(0);
-  const [rowCount, setRowCount] = useState(300);
+  const [rowCount, setRowCount] = useState(5_000);
   const [stressTest, setStressTest] = useState(false);
   const [loadingRows, setLoadingRows] = useState(false);
   const [autoScroller, setAutoScroller] = useState<AutoScroller | null>(null);
@@ -18,6 +18,9 @@ export const FastGrid = () => {
   useEffect(() => {
     const container = containerRef.current;
     if (container == null) return;
+    if (grid) {
+      grid.destroy();
+    }
   
     const loadAndInitialize = async () => {
       try {
@@ -198,33 +201,28 @@ export const FastGrid = () => {
             {stressTest ? "Filtering 3 times per second" : "Stress test"}
           </button>
         </div>
-
-        <select
-          value={rowCount}
-          onChange={(e) => {
-            if (grid == null) return;
-            setRowCount(Number(e.target.value));
+        <input
+          type="text"
+          defaultValue={rowCount.toLocaleString()} // Usar defaultValue en lugar de value
+          onBlur={(e) => {
+            const numericValue = parseInt(e.target.value.replace(/[^0-9]/g, ''), 10) || 0;
+            if (numericValue !== rowCount) {
+              setRowCount(numericValue); // Actualizar rowCount solo si cambió
+            }
+            e.target.value = numericValue.toLocaleString(); // Formatear después de validar
+          }}
+          onFocus={(e) => {
+            e.target.value = rowCount.toString(); // Mostrar número sin formato al enfocar
           }}
           className="hidden h-[28px] w-[150px] items-center justify-center rounded border border-gray-800 bg-white text-[12px] text-gray-700 shadow-[rgba(0,_0,_0,_0.1)_0px_0px_2px_1px] md:flex"
-        >
-          <option value={10}>10 rows</option>
-          <option value={10_000}>10 000 rows</option>
-          <option value={100_000}>100 000 rows</option>
-          <option value={200_000}>200 000 rows</option>
-          <option value={500_000}>500 000 rows</option>
-          <option value={1_000_000}>
-            1 000 000 rows (might run out of RAM)
-          </option>
-          <option value={2_000_000}>
-            2 000 000 rows (might run out of RAM)
-          </option>
-          <option value={5_000_000}>
-            5 000 000 rows (might run out of RAM)
-          </option>
-          <option value={10_000_000}>
-            10 000 000 rows (might run out of RAM)
-          </option>
-        </select>
+          placeholder="Número de filas"
+        />
+
+        {rowCount > 1_000_000 && (
+          <div className="text-xs text-red-500 -mt-1 ml-2"> {/* Ajuste de posición */}
+            ¡Advertencia! Valores altos pueden consumir mucha memoria
+          </div>
+        )}
       </div>
       <div
         ref={containerRef} // attaching grid here
