@@ -108,10 +108,20 @@ export class Grid {
 
     this.columnWidths = new Array(this.numCols).fill(CELL_WIDTH);
 
+    // // 1. Medir headers (se mantiene igual)
+    // this.headerRows[1].cells.forEach((cell, i) => {
+    //   tempEl.textContent = String(cell.v);
+    //   this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42);
+    // });
     // 1. Medir headers (se mantiene igual)
     this.headerRows[1].cells.forEach((cell, i) => {
       tempEl.textContent = String(cell.v);
-      this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42);
+      // Si existe cell.arrow y su contenido es "⏷", usar un padding extra
+      let extraPadding = 0;
+      if (cell instanceof HeaderCell){
+        extraPadding = cell.arrow && cell.arrow.textContent !== "" ? 52 : 42;
+      }
+      this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42 + extraPadding);
     });
 
     // 2. Medir celdas
@@ -156,10 +166,9 @@ export class Grid {
   getState = (): GridState => {
     const numRows = this.rowManager.getNumRows();
 
-    const validColumns = this.columnWidths.slice(0, this.numCols); // Asegura sincronía
     const starts = [0];
-    for (let i = 0; i < this.numCols; i++) {  // Usar this.numCols en lugar de array length
-      starts.push(starts[i] + validColumns[i]);
+    for (let i = 0; i < this.numCols; i++) {
+      starts.push(starts[i] + this.columnWidths[i]);
     }
     const tableWidth = starts[this.numCols];
 

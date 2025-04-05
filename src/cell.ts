@@ -100,7 +100,7 @@ export class HeaderCell implements CellComponent {
     arrowContainer.className =
       "flex items-center justify-center w-[35px] h-[28px] cursor-pointer";
     // ordering when clicking on the whole container
-    this.el.addEventListener("click", this.onArrowClick);
+    this.el.addEventListener("click", this.onHeaderClick);
 
     this.arrow = document.createElement("span") as any;
     arrowContainer.className = "flex items-center justify-center w-[35px] h-full cursor-pointer";
@@ -120,8 +120,9 @@ export class HeaderCell implements CellComponent {
     // --------------ARROW FUNCTIONALITY--------------
 
     this.syncToFilter();
+    this.setOffset(this._offset, true);
   }
-  private onArrowClick = () => {
+  private onHeaderClick = () => {
     const idx = this.grid.rowManager.view.sort.findIndex(
       (sort) => sort.column === this.index
     );
@@ -143,7 +144,6 @@ export class HeaderCell implements CellComponent {
   };
   setContent(text: string | number) {
     this.el.innerText = String(text);
-    this.syncToFilter();
   }
   setOffset(offset: number, force: boolean = false) {
     if (force || offset !== this._offset) {
@@ -158,17 +158,17 @@ export class HeaderCell implements CellComponent {
     this.syncToFilter();
   }
   syncToFilter = () => {
-    if (this.index in this.grid.rowManager.view.sort) {
-      const sort = this.grid.rowManager.view.sort.find(
-        (sort) => sort.column === this.index
-      );
-      if (sort == null) {
-        this.arrow.textContent = "";
-      } else if (sort.direction === "descending") {
-        this.arrow.textContent = "⏷";
-      } else {
-        this.arrow.textContent = "⏶";
-      }
+    const sort = this.grid.rowManager.view.sort.find(
+      (sort) => sort.column === this.index
+    );
+    if (sort == null) {
+      this.arrow.textContent = "";
+    } else if (sort.direction === "descending") {
+      console.log("descending");
+      this.arrow.textContent = "⏷";
+    } else if (sort.direction === "ascending") {
+      console.log("ascending");
+      this.arrow.textContent = "⏶";
     }
   };
 }
@@ -209,7 +209,7 @@ export class FilterCell implements CellComponent {
     this.input.addEventListener("input", this.onInputChange);
     this.el.appendChild(this.input);
 
-    // ----------------ARROW FUNCTIONALITY----------------
+    // --------------ARROW FUNCTIONALITY--------------
     // const arrowContainer = document.createElement("div");
     // arrowContainer.className =
     //   "flex items-center justify-center w-[35px] h-[28px] cursor-pointer";
@@ -244,7 +244,7 @@ export class FilterCell implements CellComponent {
 
     // arrowContainer.appendChild(this.arrow);
     // this.el.appendChild(arrowContainer);
-    // ----------------ARROW FUNCTIONALITY----------------
+    // --------------ARROW FUNCTIONALITY--------------
 
     this.syncToFilter();
     this.setOffset(this._offset, true);
@@ -283,6 +283,16 @@ export class FilterCell implements CellComponent {
     } else {
       this.input.value = "";
     }
+    // const sort = this.grid.rowManager.view.sort.find(
+    //   (sort) => sort.column === this.index
+    // );
+    // if (sort == null) {
+    //   this.arrow.style.transform = "rotate(90deg)";
+    // } else if (sort.direction === "descending") {
+    //   this.arrow.style.transform = "rotate(180deg)";
+    // } else {
+    //   this.arrow.style.transform = "rotate(0deg)";
+    // }
   };
   setContent = () => {
     this.syncToFilter();

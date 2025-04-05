@@ -125,12 +125,12 @@ export class RowComponent {
 
       const reuseCell = removeCells.pop();
       if (reuseCell != null) {
-          delete this.cellComponentMap[reuseCell.id];
-          reuseCell.reuse(cell.id, currentOffset, cell.v, i); // Pasar índice
-          reuseCell.el.style.width = `${columnWidth}px`; // Forzar actualización
-          this.cellComponentMap[reuseCell.id] = reuseCell;
-          currentOffset += columnWidth;
-          continue;
+        delete this.cellComponentMap[reuseCell.id];
+        reuseCell.reuse(cell.id, currentOffset, cell.v, i); // Pasar índice
+        reuseCell.el.style.width = `${columnWidth}px`; // Forzar actualización
+        this.cellComponentMap[reuseCell.id] = reuseCell;
+        currentOffset += columnWidth;
+        continue;
       }
 
       const newCell = new this.CellRenderer(
