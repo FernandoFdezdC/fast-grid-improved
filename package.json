@@ -2,6 +2,10 @@
   "name": "grid",
   "private": true,
   "version": "0.0.0",
+  "main": "index.ts",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/@FernandoFdezdC"
+  },
   "scripts": {
     "ts": "tsc --watch --noEmit",
     "predeploy": "cd example && npm run build"
