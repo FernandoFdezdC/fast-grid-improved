@@ -1,11 +1,12 @@
 {
   "name": "@FernandoFdezdC/fast-grid-improved",
-  "version": "0.0.1",
-  "main": "index.ts",
+  "version": "0.0.2",
+  "main": "dist/index.js",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
+    "build": "tsc",
     "ts": "tsc --watch --noEmit",
     "predeploy": "cd example && npm run build"
   },
