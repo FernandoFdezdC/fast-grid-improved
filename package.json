@@ -1,6 +1,6 @@
 {
   "name": "@FernandoFdezdC/fast-grid-improved",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "main": "index.ts",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
