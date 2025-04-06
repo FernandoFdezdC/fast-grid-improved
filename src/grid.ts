@@ -108,21 +108,11 @@ export class Grid {
 
     this.columnWidths = new Array(this.numCols).fill(CELL_WIDTH);
 
-    // 1. Medir headers (se mantiene igual)
+    // 1. Medir headers
     this.headerRows[1].cells.forEach((cell, i) => {
       tempEl.textContent = String(cell.v);
       this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42);
     });
-    // // 1. Medir headers (se mantiene igual)
-    // this.headerRows[1].cells.forEach((cell, i) => {
-    //   tempEl.textContent = String(cell.v);
-    //   // Si existe cell.arrow y su contenido es "⏷", usar un padding extra
-    //   let extraPadding = 0;
-    //   if (cell instanceof HeaderCell){
-    //     extraPadding = cell.arrow && cell.arrow.textContent !== "" ? 52 : 42;
-    //   }
-    //   this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42 + extraPadding);
-    // });
 
     // 2. Medir celdas
     this.rowManager.rows.forEach(row => {
