@@ -1,9 +1,9 @@
 {
-  "name": "fast-grid-improved",
+  "name": "@FernandoFdezdC/fast-grid-improved",
   "version": "0.0.0",
   "main": "index.ts",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+    "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
     "ts": "tsc --watch --noEmit",
