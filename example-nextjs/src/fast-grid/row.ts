@@ -48,6 +48,13 @@ export class RowComponent {
     this.el = document.createElement("div");
     this.el.className = "absolute top-0 h-[32px]";
 
+    // eh temporary header hack, make this passable
+    if (CellRenderer !== StringCell) {
+      this.el.style.zIndex = "1";
+    }
+
+    this.CellRenderer = CellRenderer;
+    
     // 👇 Añadir !important para sobrescribir cualquier estilo conflictivo
     if (CellRenderer === StringCell) {
       this.el.style.cssText = `
@@ -60,13 +67,6 @@ export class RowComponent {
     } else {
       this.el.style.backgroundColor = "#f0f0f0";
     }
-
-    // eh temporary header hack, make this passable
-    if (CellRenderer !== StringCell) {
-      this.el.style.zIndex = "1";
-    }
-
-    this.CellRenderer = CellRenderer;
 
     this.setOffset(this._offset, true);
     this.renderCells();

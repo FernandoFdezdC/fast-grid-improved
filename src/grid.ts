@@ -354,7 +354,7 @@ export class Grid {
         reuseRow.cells = row.cells;
         reuseRow.setOffset(offset);
         reuseRow.absoluteIndex = i + 1; // Índice 1-based
-        reuseRow.updateBackground(); // Actualizar color aquí
+        reuseRow.updateBackground(); // Actualizar color
         reuseRow.renderCells();
         this.rowComponentMap[row.id] = reuseRow;
         continue;
