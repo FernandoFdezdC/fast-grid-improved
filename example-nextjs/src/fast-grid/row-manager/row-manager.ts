@@ -2,9 +2,31 @@ import { Grid } from "../grid";
 import { Row } from "../row";
 import { isEmptyFast } from "../utils/is-empty-fast";
 import { ComputeViewEvent, SetRowsEvent } from "./view-worker";
-import ViewWorker from "./view-worker?worker&inline";
 
-const viewWorker = new ViewWorker();
+// Función universal para crear el worker
+const getViewWorker = () => {
+  if (typeof window === 'undefined') return null; // Skip en SSR
+  
+  try {
+    // Entorno Vite
+    if (import.meta.env?.DEV && import.meta.hot) {
+      // @ts-ignore: Sintaxis específica de Vite
+      const ViteWorker = require("./view-worker?worker&inline");
+      return new ViteWorker();
+    }
+    
+    // Entorno Next.js/Webpack
+    // Usamos URL para crear un worker desde el archivo
+    return new Worker(new URL("./view-worker", import.meta.url), {
+      type: "module"
+    });
+  } catch (e) {
+    console.error("Worker load failed", e);
+    return null;
+  }
+};
+
+const viewWorker = getViewWorker(); // Obtener instancia directamente
 
 export type Rows = Row[];
 
@@ -32,6 +54,7 @@ export class RowManager {
   isViewResult: boolean = false;
   currentFilterId: number;
   viewBuffer: RowBuffer;
+  
   constructor(grid: Grid, rows: Rows) {
     this.grid = grid;
     this.rows = rows;
@@ -43,35 +66,45 @@ export class RowManager {
       version: Date.now(),
     };
 
-    viewWorker.postMessage({ type: "set-rows", rows } satisfies SetRowsEvent);
+    // Solo enviar mensajes si el worker está disponible
+    if (viewWorker) {
+      viewWorker.postMessage({ 
+        type: "set-rows", 
+        rows 
+      } satisfies SetRowsEvent);
+    }
 
     const sharedBuffer = new SharedArrayBuffer(
       1_000_000 * Int32Array.BYTES_PER_ELEMENT
     );
-    this.viewBuffer = { buffer: new Int32Array(sharedBuffer), numRows: -1 };
-
-    viewWorker.onmessage = (event: MessageEvent<ComputeViewDoneEvent>) => {
-      switch (event.data.type) {
-        case "compute-view-done": {
-          const updateThumb = event.data.skipRefreshThumb !== true;
-          this.viewBuffer.numRows = event.data.numRows;
-          this.isViewResult = true;
-          this.grid.renderViewportRows();
-
-          if (updateThumb) {
-            this.grid.scrollbar.clampThumbIfNeeded();
-          }
-
-          this.grid.renderViewportRows();
-          this.grid.renderViewportCells();
-          if (updateThumb) {
-            this.grid.scrollbar.refreshThumb();
-          }
-          // NOTE(gab): refresh size of thumb after completely done filtering, to prevent jumping of size
-          break;
-        }
-      }
+    this.viewBuffer = { 
+      buffer: new Int32Array(sharedBuffer), 
+      numRows: -1 
     };
+
+    if (viewWorker) {
+      viewWorker.onmessage = (event: MessageEvent<ComputeViewDoneEvent>) => {
+        switch (event.data.type) {
+          case "compute-view-done": {
+            const updateThumb = event.data.skipRefreshThumb !== true;
+            this.viewBuffer.numRows = event.data.numRows;
+            this.isViewResult = true;
+            this.grid.renderViewportRows();
+
+            if (updateThumb) {
+              this.grid.scrollbar.clampThumbIfNeeded();
+            }
+
+            this.grid.renderViewportRows();
+            this.grid.renderViewportCells();
+            if (updateThumb) {
+              this.grid.scrollbar.refreshThumb();
+            }
+            break;
+          }
+        }
+      };
+    }
   }
   getViewBuffer = (): RowBuffer | null => {
     if (this.isViewResult) {
@@ -104,9 +137,6 @@ export class RowManager {
       console.log("Ms to send rows to worker", performance.now() - t0);
     }
   };
-  isViewEmpty = () => {
-    return isEmptyFast(this.view.filter) && isEmptyFast(this.view.sort);
-  };
   runFilter = async () => {
     console.count("---------- start filter");
     this.view.version = Date.now();
@@ -116,7 +146,7 @@ export class RowManager {
       this.grid.renderViewportRows();
       this.grid.renderViewportCells();
       this.grid.scrollbar.refreshThumb();
-    } else {
+    } else if (viewWorker) {
       viewWorker.postMessage({
         type: "compute-view",
         viewConfig: this.view,
@@ -124,6 +154,7 @@ export class RowManager {
       } satisfies ComputeViewEvent);
     }
   };
+
   runSort = async () => {
     console.count("---------- start sort");
     this.view.version = Date.now();
@@ -133,7 +164,7 @@ export class RowManager {
       this.grid.renderViewportRows();
       this.grid.renderViewportCells();
       this.grid.scrollbar.refreshThumb();
-    } else {
+    } else if (viewWorker) {
       viewWorker.postMessage({
         type: "compute-view",
         viewConfig: this.view,
@@ -142,12 +173,18 @@ export class RowManager {
     }
   };
   destroy = () => {
+    if (viewWorker) {
+      viewWorker.terminate();
+    }
     // no memory leaks.. make sure gc kicks in asap
     // @ts-expect-error
     this.viewBuffer = null;
     // @ts-expect-error
     this.noViewBuffer = null;
     viewWorker.terminate();
+  };
+  isViewEmpty = () => {
+    return isEmptyFast(this.view.filter) && isEmptyFast(this.view.sort);
   };
 }
 
