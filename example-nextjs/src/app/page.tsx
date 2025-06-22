@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-// import Stats from "stats.js";
+import Stats from "stats.js";
 import { Analytics } from "@vercel/analytics/react";
 import { Grid } from "@/fast-grid/grid";
 import { FilterCell, HeaderCell } from "@/fast-grid/cell";
@@ -146,32 +146,66 @@ export default function Home() {
     autoScroller.start(speed === 0 ? 0 : Math.exp(speed / 15));
   }, [autoScroller, speed]);
 
+  // Stats
+  useEffect(() => {
+    // Verificar que estamos en el cliente
+    if (typeof window !== 'undefined') {
+      const setupFPS = () => {
+        const stats = new Stats();
+        stats.showPanel(0);
+        stats.dom.style.top = "unset";
+        stats.dom.style.left = "unset";
+        stats.dom.style.bottom = "0";
+        stats.dom.style.right = "0";
+
+        for (const child of stats.dom.children) {
+          // @ts-expect-error ddd
+          child.style.width = "160px";
+          // @ts-expect-error ddd
+          child.style.height = "96px";
+        }
+        
+        document.body.appendChild(stats.dom);
+        
+        const animate = () => {
+          stats.update();
+          window.requestAnimationFrame(animate);
+        };
+        window.requestAnimationFrame(animate);
+      };
+      
+      setupFPS();
+    }
+  }, []); // Array vacío = solo se ejecuta al montar el componente
+  
   return (
-    <>
+    <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 w-full">
       <Analytics />
-      <h1 className="self-start text-lg font-bold sm:self-center md:text-3xl">
-        World's most performant DOM-based table
-      </h1>
-      <div className="mt-1 self-start max-md:mt-2 sm:self-center">
-        Try make the fps counter drop by filtering, sorting, and scrolling
-        simultaneously
-      </div>
-      <div className="mb-4 mt-1 self-start text-sm max-md:mt-2 sm:self-center sm:text-[13px]">
-        See code:
-        <a
-          className="ml-1 text-blue-600 underline hover:text-blue-800"
-          href="https://github.com/gabrielpetersson/fast-grid/"
-        >
-          https://github.com/gabrielpetersson/fast-grid/
-        </a>
+
+      {/* Encabezado centrado */}
+      <div className="flex flex-col items-center w-full max-w-6xl mb-1"> {/* Contenedor para centrar contenido */}
+        <h1 className="text-lg font-bold sm:text-xl md:text-3xl text-center mb-0">
+          World's most performant DOM-based table in Next.js
+        </h1>
+        <div className="mt-1 text-center max-w-2xl">
+          Try make the fps counter drop by filtering, sorting, and scrolling simultaneously
+        </div>
+        <div className="mb-2 mt-1 text-sm text-center">
+          See code:
+          <a
+            className="ml-1 text-blue-600 underline hover:text-blue-800"
+            href="https://github.com/gabrielpetersson/fast-grid/"
+          >
+            https://github.com/gabrielpetersson/fast-grid/
+          </a>
+        </div>
       </div>
 
-      <div
-        className={clsx(
-          "flex w-full select-none flex-wrap justify-between gap-2 py-2",
-          loadingRows && "pointer-events-none select-none opacity-60"
-        )}
-      >
+      {/* Controles */}
+      <div className={clsx(
+        "flex flex-col sm:flex-row flex-wrap justify-between gap-4 py-2 w-full max-w-6xl",
+        loadingRows && "pointer-events-none select-none opacity-60"
+      )}>
         <div className="hidden w-[150px] md:block" />
 
         <div className="flex gap-2 text-[11px] md:gap-8 md:text-[13px]">
@@ -193,7 +227,7 @@ export default function Home() {
 
           <button
             className={clsx(
-              "flex h-[28px] w-[200px] items-center justify-center gap-0.5 rounded bg-blue-500 text-white hover:opacity-95 active:opacity-90",
+              "flex h-[28px] w-[200px] items-center justify-center gap-0.5 rounded bg-blue-500 text-white hover:opacity-95 active:opacity-90 cursor-pointer transition-opacity",
               stressTest && "bg-red-500"
             )}
             onClick={() => {
@@ -247,44 +281,21 @@ export default function Home() {
           </div>
         )}
       </div>
-      <div
-        ref={containerRef} // attaching grid here
-        style={{
-          contain: "strict",
-          minHeight: "540px",
-        }}
-        className={clsx(
-          "relative box-border w-full flex-1 overflow-clip border border-gray-700 bg-white",
-          loadingRows && "pointer-events-none opacity-70"
-        )}
-      />
-    </>
+      {/* Grid */}
+      <div className="w-full max-w-10xl -mt-4 -mb-6">
+        <div
+          ref={containerRef}
+          style={{ contain: "strict", minHeight: "540px" }}
+          className={clsx(
+            "relative box-border w-full flex-1 overflow-clip border border-gray-700 bg-white mt-4",
+            loadingRows && "pointer-events-none opacity-70"
+          )}
+        />
+      </div>
+    </main>
   );
 };
 
-// const setupFPS = () => {
-  // const stats = new Stats();
-  // stats.showPanel(0);
-  // stats.dom.style.top = "unset";
-  // stats.dom.style.left = "unset";
-  // stats.dom.style.bottom = "0";
-  // stats.dom.style.right = "0";
-
-  // for (const child of stats.dom.children) {
-  //   // @ts-expect-error ddd
-  //   child.style.width = "160px";
-  //   // @ts-expect-error ddd
-  //   child.style.height = "96px";
-  // }
-
-  // document.body.appendChild(stats.dom);
-  // const animate = () => {
-  //   stats.update();
-  //   window.requestAnimationFrame(animate);
-  // };
-  // window.requestAnimationFrame(animate);
-// };
-// setupFPS();
 
 class AutoScroller {
   grid: Grid;
