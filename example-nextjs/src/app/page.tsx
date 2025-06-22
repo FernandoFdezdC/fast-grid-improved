@@ -13,7 +13,7 @@ export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [grid, setGrid] = useState<Grid | null>(null);
   const [speed, setSpeed] = useState(0);
-  const [rowCount, setRowCount] = useState(5_000);
+  const [rowCount, setRowCount] = useState(500);
   const [stressTest, setStressTest] = useState(false);
   const [loadingRows, setLoadingRows] = useState(false);
   const [autoScroller, setAutoScroller] = useState<AutoScroller | null>(null);
