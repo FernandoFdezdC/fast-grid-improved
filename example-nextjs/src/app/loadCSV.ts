@@ -1,6 +1,6 @@
-import { Grid } from "@/fast-grid/grid";
-import { Cell, Row } from "@/fast-grid/row";
-import { Rows } from "@/fast-grid/row-manager/row-manager";
+import { Grid } from "fast-grid";
+import { Cell, Row } from "fast-grid";
+import { Rows } from "fast-grid";
 
 // Función para controlar el rendimiento sin librerías externas
 const shouldYield = (lastYieldTime: number, chunkSize = 10000): boolean => {

@@ -3,8 +3,8 @@
 import clsx from "clsx";
 import Stats from "stats.js";
 import { Analytics } from "@vercel/analytics/react";
-import { Grid } from "@/fast-grid/grid";
-import { FilterCell, HeaderCell } from "@/fast-grid/cell";
+import { Grid } from "fast-grid";
+import { FilterCell, HeaderCell } from "fast-grid";
 import { loadCSV, getCSVFromPublic, getCSVColumns } from "@/app/loadCSV";
 import { useState, useRef, useEffect } from "react";
 

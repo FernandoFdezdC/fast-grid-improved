@@ -295,6 +295,10 @@ export type SetRowsEvent = {
 
 export type Message = MessageEvent<ComputeViewEvent | SetRowsEvent>;
 
-self.addEventListener("message", (event: Message) => {
-  handleEvent(event);
-});
+if (typeof self !== "undefined") {
+  self.addEventListener("message", (event: Message) => {
+    handleEvent(event);
+  });
+} else {
+  console.warn("Skipping worker setup in non-worker environment");
+}

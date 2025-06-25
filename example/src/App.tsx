@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import Stats from "stats.js";
 import { Analytics } from "@vercel/analytics/react";
-import { FilterCell, HeaderCell, Grid } from "grid";
+import { FilterCell, HeaderCell, Grid } from "fast-grid";
 import { loadCSV, getCSVFromPublic, getCSVColumns } from "./loadCSV";
 import { useState, useRef, useEffect } from "react";
 

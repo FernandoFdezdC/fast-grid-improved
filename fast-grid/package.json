@@ -1,0 +1,35 @@
+{
+  "name": "fast-grid",
+  "version": "1.0.0",
+  "description": "High-performance grid component",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./worker": "./dist/row-manager/view-worker.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prepack": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "devDependencies": {
+    "typescript": "5.8.2",
+    "vite": "6.2.5"
+  },
+  "dependencies": {
+    "@types/timsort": "0.3.3",
+    "apache-arrow": "13.0.0",
+    "fast-sort": "3.4.1",
+    "main-thread-scheduling": "14.3.0",
+    "timsort": "0.3.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
+}
