@@ -134,10 +134,11 @@ export class Grid {
         id: i,
         v: "",
       })),
-      offset,
+      offset,  // Fila de filtros en posición 0
       FilterCell,
       -2
     );
+    
     const headerRow = new RowComponent(
       this,
       HEADER_ID,
@@ -145,13 +146,40 @@ export class Grid {
         id: i,
         v: header,
       })),
-      (offset += ROW_HEIGHT),
+      ROW_HEIGHT,  // Fila de encabezado justo debajo
       HeaderCell,
       -1
     );
 
+    // Aplicar estilos de apilamiento a toolsRow (filtros)
+    Object.assign(toolsRow.el.style, {
+      position: 'absolute',
+      zIndex: '9',
+      backgroundColor: 'white',
+      top: '0',
+      left: '0',
+      width: '100%',
+      height: `${ROW_HEIGHT}px`,
+      transform: 'translateZ(0)',
+      willChange: 'transform'
+    });
+
+    // Aplicar estilos de apilamiento a headerRow (encabezados)
+    Object.assign(headerRow.el.style, {
+      position: 'absolute',
+      zIndex: '9',
+      backgroundColor: 'white',
+      top: `${ROW_HEIGHT}px`,  // Justo debajo de toolsRow
+      left: '0',
+      width: '100%',
+      height: `${ROW_HEIGHT}px`,
+      transform: 'translateZ(0)',
+      willChange: 'transform'
+    });
+
     this.container.appendChild(toolsRow.el);
     this.container.appendChild(headerRow.el);
+    
     return [toolsRow, headerRow];
   }
   getState = (): GridState => {
