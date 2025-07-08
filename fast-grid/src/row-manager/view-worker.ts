@@ -158,6 +158,7 @@ const computeView = async ({
     rowsArr,
     onEarlyResults: (numRows: number) => {
       console.log("early results", numRows);
+      console.log('🔍 buffer sample (worker):', Array.from(buffer.slice(0,10)));
       self.postMessage({
         type: "compute-view-done",
         numRows,

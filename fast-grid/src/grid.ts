@@ -57,6 +57,7 @@ export class Grid {
   resizeObserver: ResizeObserver;
   constructor(container: HTMLDivElement, rows: Rows, headers: string[]) {
     this.container = container;
+    console.log("construct grid")
     this.rowManager = new RowManager(this, rows);
 
     this.headerRows = this.createHeader(headers);

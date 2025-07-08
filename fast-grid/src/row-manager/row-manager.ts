@@ -69,6 +69,10 @@ export class RowManager {
     }
     this.workerAvailable = this.viewWorker !== null;
 
+    console.log("RowManager initialized");
+    console.log("Worker available:", this.workerAvailable);
+    console.log("Rows count:", rows.length);
+    
     this.currentFilterId = 0;
     this.view = {
       filter: {},
@@ -104,6 +108,15 @@ export class RowManager {
       const updateThumb = data.skipRefreshThumb !== true;
       this.viewBuffer.numRows = data.numRows;
       this.isViewResult = true;
+
+      console.log(
+        '🏷️ handleWorkerMessage: numRows=', 
+        data.numRows, 
+        'this.rows.length=', 
+        this.rows.length,
+        'buffer[0..5]=', 
+        Array.from(this.viewBuffer.buffer.slice(0, Math.min(5, data.numRows)))
+      );
       
       this.grid.renderViewportRows();
       
@@ -145,6 +158,8 @@ export class RowManager {
       } satisfies SetRowsEvent);
       console.log("Ms to send rows to worker", performance.now() - t0);
     }
+
+    console.log('► main → set-rows', rows.length, 'filas');
   };
 
   runFilter = () => {
@@ -163,6 +178,11 @@ export class RowManager {
       this.isViewResult = false;
       this.updateGridDisplay();
     } else if (this.workerAvailable) {
+      console.log(
+        `%c► main → compute-view (v=${this.view.version})`, 
+        'color: purple',
+        this.view
+      );
       this.viewWorker!.postMessage({
         type: "compute-view",
         viewConfig: this.view,
