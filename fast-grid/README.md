@@ -42,4 +42,3 @@ zero copy datatype
 - resize columns
 - custom cells (you can kinda already do this though, just add a new cell class)
 - make sure rows are ordered correctly for text selection
-- make horizontal scrollbar work when pressing Shift.
