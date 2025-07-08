@@ -3,7 +3,7 @@ import { Cell, Row } from "fast-grid";
 import { Rows } from "fast-grid";
 
 // Función para controlar el rendimiento sin librerías externas
-const shouldYield = (lastYieldTime: number, chunkSize = 10000): boolean => {
+const shouldYield = (lastYieldTime: number): boolean => {
   return performance.now() - lastYieldTime > 16; // 16ms ≈ 60fps
 };
 

@@ -1,7 +1,7 @@
 import { Grid } from "./grid";
 
 export const CELL_WIDTH = 50;
-export const CELL_HEIGHT = 30;
+export const CELL_HEIGHT = 32;
 
 export type CellComponent = {
   id: number;
@@ -32,13 +32,25 @@ export class StringCell implements CellComponent {
     // rendering monospace text with text smoothing
     // https://codesandbox.io/s/performance-test-disabling-text-antialiasing-om6f3q?file=/index.js
     // NOTE(gab): align-items actually has a super slight imapact on Layerize time, using padding for now
-    this.el.className = 
-      "flex h-full pt-[7px] text-black box-border cursor-default pl-[6px] absolute left-0 font-mono text-[14px] truncate";
-    this.el.style.width = `${CELL_WIDTH}px`;
-    this.el.style.backgroundColor = "transparent";
-    this.el.style.position = "absolute";
-    this.el.style.top      = "0px";
-    this.el.style.left     = "0px";
+    Object.assign(this.el.style, {
+      width: `${CELL_WIDTH}px`,
+      height: `${CELL_HEIGHT}px`, // Altura fija
+      backgroundColor: "transparent",
+      position: "absolute",
+      top: "0px",
+      left: "0px",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      paddingTop: "7px",
+      paddingLeft: "6px",
+      color: "black",
+      boxSizing: "border-box",
+      cursor: "default",
+      zIndex: "0",
+      fontFamily: "monospace",
+      fontSize: "14px"
+    });
     
     // Añadir estos estilos complementarios
     this.el.style.overflow = "hidden";
@@ -91,6 +103,7 @@ export class HeaderCell implements CellComponent {
       width: `${CELL_WIDTH}px`,
       height: `${CELL_HEIGHT}px`, // Altura fija
       position: "absolute",
+      zIndex: "20",
       top: "0px",
       left: "0px",
       display: "flex",
