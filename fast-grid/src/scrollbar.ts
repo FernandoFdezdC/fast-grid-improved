@@ -17,22 +17,53 @@ export class Scrollbar {
     this.transientScrollOffsetY = 0;
     this.transientScrollOffsetX = 0;
 
+    // TRACK X
     this.trackX = document.createElement("div");
-    this.trackX.className =
-      "absolute bottom-0 z-10 h-[8px] w-full cursor-pointer bg-gray-100 border-t border-gray-300";
+    Object.assign(this.trackX.style, {
+      position: "absolute",
+      bottom: "0px",
+      left: "0px",
+      right: "8px",                // deja espacio para la scrollbar Y
+      height: "8px",
+      backgroundColor: "#f3f4f6",  // bg-gray-100
+      borderTop: "1px solid #d1d5db", // border-t border-gray-300
+      cursor: "pointer",
+      zIndex: "10",
+    });
 
+    // THUMB X
     this.thumbX = document.createElement("div");
-    this.thumbX.className =
-      "h-full cursor-pointer bg-gray-400 hover:opacity-90 rounded";
+    Object.assign(this.thumbX.style, {
+      height: "100%",
+      backgroundColor: "#9ca3af",  // bg-gray-400
+      borderRadius: "4px",
+      cursor: "pointer",
+    });
 
+    // TRACK Y
     this.trackY = document.createElement("div");
-    this.trackY.className =
-      "absolute right-0 z-10 h-full w-[8px] cursor-pointer bg-gray-100 border-l border-gray-300";
+    Object.assign(this.trackY.style, {
+      position: "absolute",
+      top: "0px",
+      bottom: "0px",
+      right: "0px",
+      width: "8px",
+      backgroundColor: "#f3f4f6",
+      borderLeft: "1px solid #d1d5db",
+      cursor: "pointer",
+      zIndex: "10",
+    });
 
+    // THUMB Y
     this.thumbY = document.createElement("div");
-    this.thumbY.className =
-      "w-full cursor-pointer bg-gray-400 hover:opacity-90 rounded";
+    Object.assign(this.thumbY.style, {
+      width: "100%",
+      backgroundColor: "#9ca3af",
+      borderRadius: "4px",
+      cursor: "pointer",
+    });
 
+    // Listeners de track
     this.trackX.addEventListener("mousemove", this.onTrackMouseMoveX);
     this.trackX.addEventListener("mousedown", this.onTrackMouseDownX);
 

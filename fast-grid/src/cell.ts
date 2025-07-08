@@ -1,6 +1,7 @@
 import { Grid } from "./grid";
 
 export const CELL_WIDTH = 50;
+export const CELL_HEIGHT = 30;
 
 export type CellComponent = {
   id: number;
@@ -86,13 +87,23 @@ export class HeaderCell implements CellComponent {
     this.index = index;
 
     this.el = document.createElement("div");
-    this.el.className =
-      "flex h-full pt-[5px] border-[0] border-r border-b-2 border-solid border-gray-700 text-gray-800 box-border cursor-pointer pl-[6px] absolute left-0 overflow-clip";
-    this.el.style.width = `${CELL_WIDTH}px`;
-    this.el.style.backgroundColor = "white";
-    this.el.style.position = "absolute";
-    this.el.style.top      = "0px";
-    this.el.style.left     = "0px";
+    Object.assign(this.el.style, {
+      width: `${CELL_WIDTH}px`,
+      height: `${CELL_HEIGHT}px`, // Altura fija
+      position: "absolute",
+      top: "0px",
+      left: "0px",
+      display: "flex",
+      paddingTop: "5px",
+      paddingLeft: "6px",
+      borderRight: "1px solid #374151",
+      borderBottom: "2px solid #374151",
+      color: "#1f2937",
+      boxSizing: "border-box",
+      cursor: "pointer",
+      overflow: "hidden",
+      backgroundColor: "white"
+    });
 
     // text display
     this.textDisplay = document.createElement("div");
@@ -208,19 +219,37 @@ export class FilterCell implements CellComponent {
     this._offset = offset;
 
     this.el = document.createElement("div");
-    this.el.className =
-      "flex h-full pt-[5px] border-[0] border-r border-b border-solid border-gray-700 text-gray-800 box-border cursor-default pl-[6px] absolute left-0 overflow-clip";
-    this.el.style.width = `${CELL_WIDTH}px`;
-    this.el.style.position = "absolute";
-    this.el.style.top      = "0px";
-    this.el.style.left     = "0px";
+    Object.assign(this.el.style, {
+      width: `${CELL_WIDTH}px`,
+      height: `${CELL_HEIGHT}px`, // Altura fija
+      position: "absolute",
+      top: "0px",
+      left: "0px",
+      display: "flex",
+      paddingTop: "5px",
+      paddingLeft: "6px",
+      borderRight: "1px solid #374151",
+      borderBottom: "1px solid #374151",
+      color: "#1f2937",
+      boxSizing: "border-box",
+      cursor: "default",
+      overflow: "hidden",
+      backgroundColor: "white"
+    });
 
     this.input = document.createElement("input");
     this.input.type = "text";
     this.input.value = String(text);
-    this.input.className =
-      "w-full h-full border-none outline-none text-[13px] select-none";
-    this.input.style.fontFamily = "monospace";
+    Object.assign(this.input.style, {
+      width: "100%",
+      height: "24px", // Altura fija menor que la celda
+      outline: "none",
+      fontSize: "13px",
+      padding: "2px 6px", // Padding interno
+      fontFamily: "monospace",
+      boxSizing: "border-box"
+    });
+    
     this.input.placeholder = "Filtrar...";
     this.input.addEventListener("input", this.onInputChange);
     this.el.appendChild(this.input);
