@@ -1,7 +1,7 @@
 import { isTimeToYield, yieldControl } from "main-thread-scheduling";
-import { Grid } from "../../src/grid";
-import { Cell, Row } from "../../src/row";
-import { Rows } from "../../src/row-manager/row-manager";
+import { Grid } from "fast-grid";
+import { Cell, Row } from "fast-grid";
+import { Rows } from "fast-grid";
 
 export const loadCSV = async (
   file: File,

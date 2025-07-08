@@ -11,7 +11,7 @@
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
     "clsx": "^2.1.1",
-    "grid": "file:../",
+    "fast-grid": "file:../fast-grid",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -25,6 +25,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
+    "null-loader": "^4.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

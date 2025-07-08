@@ -35,6 +35,9 @@ export class StringCell implements CellComponent {
       "flex h-full pt-[7px] text-black box-border cursor-default pl-[6px] absolute left-0 font-mono text-[14px] truncate";
     this.el.style.width = `${CELL_WIDTH}px`;
     this.el.style.backgroundColor = "transparent";
+    this.el.style.position = "absolute";
+    this.el.style.top      = "0px";
+    this.el.style.left     = "0px";
     
     // Añadir estos estilos complementarios
     this.el.style.overflow = "hidden";
@@ -87,6 +90,9 @@ export class HeaderCell implements CellComponent {
       "flex h-full pt-[5px] border-[0] border-r border-b-2 border-solid border-gray-700 text-gray-800 box-border cursor-pointer pl-[6px] absolute left-0 overflow-clip";
     this.el.style.width = `${CELL_WIDTH}px`;
     this.el.style.backgroundColor = "white";
+    this.el.style.position = "absolute";
+    this.el.style.top      = "0px";
+    this.el.style.left     = "0px";
 
     // text display
     this.textDisplay = document.createElement("div");
@@ -205,6 +211,9 @@ export class FilterCell implements CellComponent {
     this.el.className =
       "flex h-full pt-[5px] border-[0] border-r border-b border-solid border-gray-700 text-gray-800 box-border cursor-default pl-[6px] absolute left-0 overflow-clip";
     this.el.style.width = `${CELL_WIDTH}px`;
+    this.el.style.position = "absolute";
+    this.el.style.top      = "0px";
+    this.el.style.left     = "0px";
 
     this.input = document.createElement("input");
     this.input.type = "text";

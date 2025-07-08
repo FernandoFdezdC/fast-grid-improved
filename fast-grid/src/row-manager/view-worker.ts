@@ -158,6 +158,7 @@ const computeView = async ({
     rowsArr,
     onEarlyResults: (numRows: number) => {
       console.log("early results", numRows);
+      console.log('🔍 buffer sample (worker):', Array.from(buffer.slice(0,10)));
       self.postMessage({
         type: "compute-view-done",
         numRows,
@@ -295,6 +296,10 @@ export type SetRowsEvent = {
 
 export type Message = MessageEvent<ComputeViewEvent | SetRowsEvent>;
 
-self.addEventListener("message", (event: Message) => {
-  handleEvent(event);
-});
+if (typeof self !== "undefined") {
+  self.addEventListener("message", (event: Message) => {
+    handleEvent(event);
+  });
+} else {
+  console.warn("Skipping worker setup in non-worker environment");
+}

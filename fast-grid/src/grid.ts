@@ -57,6 +57,7 @@ export class Grid {
   resizeObserver: ResizeObserver;
   constructor(container: HTMLDivElement, rows: Rows, headers: string[]) {
     this.container = container;
+    console.log("construct grid")
     this.rowManager = new RowManager(this, rows);
 
     this.headerRows = this.createHeader(headers);
@@ -354,7 +355,7 @@ export class Grid {
         reuseRow.cells = row.cells;
         reuseRow.setOffset(offset);
         reuseRow.absoluteIndex = i + 1; // Índice 1-based
-        reuseRow.updateBackground(); // Actualizar color aquí
+        reuseRow.updateBackground(); // Actualizar color
         reuseRow.renderCells();
         this.rowComponentMap[row.id] = reuseRow;
         continue;
