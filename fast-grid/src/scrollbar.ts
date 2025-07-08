@@ -162,9 +162,13 @@ export class Scrollbar {
 
     let deltaY = e.deltaY;
     let deltaX = e.deltaX;
-    // NOTE(gab): it's hard to scroll exactly horizontally or vertically, so zero out
-    // the other dimension for small deltas if scrolling fast
-    if (Math.abs(deltaY) > 30 && Math.abs(deltaX) < 15) {
+    
+    // Nueva funcionalidad: Shift modifica el desplazamiento
+    if (e.shiftKey && Math.abs(deltaY) > 0 && Math.abs(deltaX) < 5) {
+      // Convertir desplazamiento vertical en horizontal cuando Shift está presionado
+      deltaX = deltaY;
+      deltaY = 0;
+    } else if (Math.abs(deltaY) > 30 && Math.abs(deltaX) < 15) {
       deltaX = 0;
     } else if (Math.abs(deltaX) > 30 && Math.abs(deltaY) < 15) {
       deltaY = 0;
@@ -177,18 +181,9 @@ export class Scrollbar {
     }
 
     this.isScrolling = true;
-    // NOTE(gab): makes sure scroll events are only triggered at most
-    // once every frame. useses transient scrolling to keep track of
-    // intermediate scroll offsets
     window.requestAnimationFrame(() => {
-      const scrollX =
-        this.transientScrollOffsetX != 0
-          ? this.transientScrollOffsetX
-          : undefined;
-      const scrollY =
-        this.transientScrollOffsetY != 0
-          ? this.transientScrollOffsetY
-          : undefined;
+      const scrollX = this.transientScrollOffsetX !== 0 ? this.transientScrollOffsetX : undefined;
+      const scrollY = this.transientScrollOffsetY !== 0 ? this.transientScrollOffsetY : undefined;
       this.scrollBy(scrollX, scrollY);
       this.isScrolling = false;
       this.transientScrollOffsetX = 0;
