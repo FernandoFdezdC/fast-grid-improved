@@ -7,7 +7,7 @@ import { Grid } from "fast-grid";
 import { FilterCell, HeaderCell } from "fast-grid";
 import { loadCSV, getCSVFromPublic, getCSVColumns } from "@/app/loadCSV";
 import { useState, useRef, useEffect } from "react";
-import "fast-grid";
+
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
