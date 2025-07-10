@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "fast-grid": ["./node_modules/fast-grid/dist"]
+    }
+  }
+}
