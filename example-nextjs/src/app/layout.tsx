@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fast grid",
+  title: "Fast grid improved",
   description: "World's most performant DOM-based table in Next.js",
 };
 
