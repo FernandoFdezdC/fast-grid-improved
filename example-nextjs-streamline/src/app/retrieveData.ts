@@ -38,9 +38,13 @@ export const initializeGrid = async (
     // Procesar cada columna en orden consistente
     for (const key of keys) {
       let value = rowData[key];
-      
+      // Manejar null
+      if (value === null) {
+        value = '';
+      }
       // Manejo especial para fechas
       if (value instanceof Date) {
+        console.log(value)
         value = value.toISOString();
       }
       // Manejo de números decimales
@@ -101,6 +105,10 @@ export const updateGrid = async (
     
     for (const key in columns) {
       let value: string | number = columns[key];
+      // Manejar null
+      if (value === null) {
+        value = '';
+      }
       const numericValue = Number(value);
       
       if (!isNaN(numericValue) && value !== "") {
