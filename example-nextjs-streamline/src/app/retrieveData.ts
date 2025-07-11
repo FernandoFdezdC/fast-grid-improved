@@ -73,10 +73,12 @@ export const updateGrid = async (
   data: any[], // Array de objetos con los datos
   grid: Grid,
 ) => {
-  let cellIndex = 0;
-
+  
   // Obtener el número de filas existentes en el grid
   const offsetRows = grid.rowManager.rows.length;
+  // console.log("num columns: ", Object.keys(data[0]).length)
+  let cellIndex = offsetRows*Object.keys(data[0]).length;
+
   const rows: Rows = [];
 
   let lastYieldTime = performance.now();

@@ -179,10 +179,28 @@ export default function Home() {
 
   // Actualizar la referencia cuando cambia la función
   useEffect(() => {
+    console.log("Number of rows: ", grid?.rowManager.rows.length)
     loadMoreRef.current = loadMoreData;
   }, [loadMoreData]);
 
-
+  // Modificar el callback en el grid para usar debounce
+  useEffect(() => {
+    if (!grid) return;
+    
+    // Implementar debounce manual
+    let timeoutId: NodeJS.Timeout;
+    
+    grid.onReachBottom = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      timeoutId = setTimeout(() => {
+        console.log("Reached bottom! Triggering load more...");
+        if (loadMoreRef.current) {
+          loadMoreRef.current();
+        }
+      }, 100); // 100ms de debounce
+    };
+  }, [grid]);
 
   useEffect(() => {
     if (!containerReady) return;
@@ -192,7 +210,7 @@ export default function Home() {
 
     const loadAndInitialize = async () => {
       try {
-        const gridFirstData = await loadWholeDataFromBackend(0, 30);
+        const gridFirstData = await loadWholeDataFromBackend(0, 17);
         const dataColumns = await getJSONColumns(gridFirstData);
         
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -222,6 +240,7 @@ export default function Home() {
     };
 
     loadAndInitialize();
+    
   }, [containerReady]);
 
 
