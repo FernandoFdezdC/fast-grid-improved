@@ -44,7 +44,7 @@ export const initializeGrid = async (
       }
       // Manejo especial para fechas
       if (value instanceof Date) {
-        console.log(value)
+        // console.log(value)
         value = value.toISOString();
       }
       // Manejo de números decimales
