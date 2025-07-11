@@ -6,7 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Grid } from "fast-grid";
 import { FilterCell, HeaderCell } from "fast-grid";
 import { initializeGrid, updateGrid, loadWholeDataFromBackend, getJSONColumns } from "@/app/retrieveData";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 interface ChunkData {
   chunk_index: number;
@@ -29,11 +29,11 @@ export default function Home() {
   const [loadingRows, setLoadingRows] = useState(false);
   const [autoScroller, setAutoScroller] = useState<AutoScroller | null>(null);
 
-  // SOLUCIÓN: Usar un estado para controlar cuando el contenedor está listo
+  // Usar useRef para mantener una referencia a la función de carga
+  const loadMoreRef = useRef<() => void>();
   const [containerReady, setContainerReady] = useState(false);
 
   useEffect(() => {
-    // Observar cambios en el contenedor
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.contentRect.height > 0) {
@@ -50,29 +50,163 @@ export default function Home() {
     return () => observer.disconnect();
   }, []);
 
+  // Añadir estados para controlar la carga
+  const isFetchingRef = useRef(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  // Función para cargar más datos
+  const loadMoreData = useCallback(async () => {
+    if (!grid) return;
+    console.log("LOAD MORE DATA");
+    isFetchingRef.current = true;
+
+    try {
+      const controller = new AbortController();
+      const signal = controller.signal;
+      
+      // Timeout para evitar bloqueos
+      const timeoutId = setTimeout(() => {
+        console.warn('[TIMEOUT] La solicitud tardó demasiado, abortando...');
+        controller.abort();
+      }, 30000);  // 30 segundos timeout
+
+      console.log('[FETCH] Realizando petición a http://localhost:8000/api/datos?offset='+grid.rowManager.rows.length+'&limit=50');
+      const response = await fetch('http://localhost:8000/api/datos?offset='+grid.rowManager.rows.length+'&limit=50', {
+        signal
+      });
+      
+      clearTimeout(timeoutId);
+      console.log('[FETCH] Respuesta recibida. Estado:', response.status);
+      
+      if (!response.ok) {
+        console.error('[ERROR] Respuesta no OK:', response.status, response.statusText);
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      if (!response.body) {
+        console.error('[ERROR] Response.body es null');
+        throw new Error('No se recibió cuerpo de respuesta');
+      }
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      let metadata: Metadata | null = null;
+      let chunkCount = 0;
+      
+      try {
+        while (true) {
+          console.log('[READER] Leyendo chunk...');
+          const { done, value } = await reader.read();
+          console.log('[READER] Resultado:', { done, value: value ? `bytes:${value.length}` : 'null' });
+          
+          if (done) {
+            console.log('[STREAM] Stream completado por done=true');
+            break;
+          }
+          
+          const decodedChunk = decoder.decode(value, { stream: true });
+          console.log('[DECODER] Chunk decodificado:', decodedChunk.length, 'caracteres');
+          buffer += decodedChunk;
+          console.log('[BUFFER] Buffer actual:', buffer.length, 'caracteres');
+          
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          console.log('[PARSER] Líneas completas:', lines.length, 'Buffer pendiente:', buffer.length);
+          
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            // console.log(`[LINE ${i}] Contenido:`, line);
+            
+            if (!line.trim()) {
+              console.log('[LINE SKIP] Línea vacía, omitiendo');
+              continue;
+            }
+            
+            if (line.trim() === '[END]') {
+              console.log('[END] Marcador de final recibido');
+              return;
+            }
+            
+            try {
+              console.log('[PARSE] Intentando parsear JSON...');
+              const data = JSON.parse(line);
+              console.log('[PARSE] JSON parseado:', data);
+              
+              if (data.error) {
+                console.error('[BACKEND ERROR] Error del servidor:', data.error);
+                throw new Error(data.error);
+              }
+              
+              if (!metadata) {
+                console.log('[METADATA] Recibidos metadatos:', data);
+                metadata = data as Metadata;
+                continue;
+              }
+              
+              const chunk = data as ChunkData;
+              console.log(`[CHUNK] Recibido chunk ${chunk.chunk_index + 1}/${metadata.num_chunks} con ${chunk.rows.length} filas`);
+              // console.log("Nuevas filas: ", chunk.rows);
+
+              // Actualizar grid con las nuevas filas
+              // console.log("grid: ", grid);
+              await updateGrid(chunk.rows, grid!);
+
+              // ———> aquí: dejas respirar al navegador
+              await new Promise(resolve => requestAnimationFrame(resolve));
+
+              chunkCount++;
+              console.log("CHUNK COUNT: ", chunkCount)
+            } catch (parseError) {
+              console.error('[PARSE ERROR] Error al parsear JSON:', parseError);
+              console.error('[RAW DATA] Contenido problemático:', line);
+              throw new Error(`Error de parseo: ${parseError}`);
+            }
+          }
+        }
+      } finally {
+        console.log('[CLEANUP] Liberando lector...');
+        reader.releaseLock();
+        isFetchingRef.current = false;
+      }
+    } catch (error) {
+      console.error('[PROCESS ERROR] Error en processStream:', error);
+      if (error instanceof Error) {
+        console.error('[ERROR DETAILS]', error.name, error.message, error.stack);
+      }
+    }
+  }, [grid, hasMore]);
+
+  // Actualizar la referencia cuando cambia la función
+  useEffect(() => {
+    loadMoreRef.current = loadMoreData;
+  }, [loadMoreData]);
+
+
+
   useEffect(() => {
     if (!containerReady) return;
     const container = containerRef.current;
-    if (container == null) return;
-    if (grid) {
-      grid.destroy();
-    }
+    if (!container) return;
+    if (grid) grid.destroy();
 
     const loadAndInitialize = async () => {
       try {
         const gridFirstData = await loadWholeDataFromBackend(0, 30);
         const dataColumns = await getJSONColumns(gridFirstData);
-
-        console.log("Grid first data: ", gridFirstData)
-        console.log(dataColumns)
         
-        // SOLUCIÓN: Esperar al próximo ciclo de renderizado
         await new Promise(resolve => setTimeout(resolve, 0));
         
-        const t0 = performance.now();
         const newGrid = new Grid(container, [], ['Index', ...dataColumns]);
         setGrid(newGrid);
-        console.info("Ms to initialize grid:", performance.now() - t0);
+
+        // Configurar el callback para cuando se llegue al final
+        newGrid.onReachBottom = () => {
+          console.log("Reached bottom! Triggering load more...");
+          if (loadMoreRef.current) {
+            loadMoreRef.current();
+          }
+        };
 
         setLoadingRows(true);
         await initializeGrid(gridFirstData, newGrid, () => setLoadingRows(false));
@@ -81,9 +215,6 @@ export default function Home() {
         setAutoScroller(autoScroller);
         (window as any).__grid = newGrid;
         
-        return () => {
-          newGrid.destroy();
-        };
       } catch (error) {
         console.error('Error:', error);
         setLoadingRows(false);
@@ -91,133 +222,7 @@ export default function Home() {
     };
 
     loadAndInitialize();
-  }, [containerReady]); // Añadir containerReady como dependencia
-
-  useEffect(() => {
-    if (!grid) return;            // solo si grid ya existe
-
-    // Load remaining data
-    const processStream = async () => {
-      try {
-        const controller = new AbortController();
-        const signal = controller.signal;
-        
-        // Timeout para evitar bloqueos
-        const timeoutId = setTimeout(() => {
-          console.warn('[TIMEOUT] La solicitud tardó demasiado, abortando...');
-          controller.abort();
-        }, 30000);  // 30 segundos timeout
-
-        console.log('[FETCH] Realizando petición a http://localhost:8000/api/datos?offset='+grid.rowManager.rows.length+'&limit=50');
-        const response = await fetch('http://localhost:8000/api/datos?offset='+grid.rowManager.rows.length+'&limit=50', {
-          signal
-        });
-        
-        clearTimeout(timeoutId);
-        console.log('[FETCH] Respuesta recibida. Estado:', response.status);
-        
-        if (!response.ok) {
-          console.error('[ERROR] Respuesta no OK:', response.status, response.statusText);
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
-        if (!response.body) {
-          console.error('[ERROR] Response.body es null');
-          throw new Error('No se recibió cuerpo de respuesta');
-        }
-        
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let buffer = '';
-        let metadata: Metadata | null = null;
-        let chunkCount = 0;
-        
-        try {
-          while (true) {
-            console.log('[READER] Leyendo chunk...');
-            const { done, value } = await reader.read();
-            console.log('[READER] Resultado:', { done, value: value ? `bytes:${value.length}` : 'null' });
-            
-            if (done) {
-              console.log('[STREAM] Stream completado por done=true');
-              break;
-            }
-            
-            const decodedChunk = decoder.decode(value, { stream: true });
-            console.log('[DECODER] Chunk decodificado:', decodedChunk.length, 'caracteres');
-            buffer += decodedChunk;
-            console.log('[BUFFER] Buffer actual:', buffer.length, 'caracteres');
-            
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-            console.log('[PARSER] Líneas completas:', lines.length, 'Buffer pendiente:', buffer.length);
-            
-            for (let i = 0; i < lines.length; i++) {
-              const line = lines[i];
-              // console.log(`[LINE ${i}] Contenido:`, line);
-              
-              if (!line.trim()) {
-                console.log('[LINE SKIP] Línea vacía, omitiendo');
-                continue;
-              }
-              
-              if (line.trim() === '[END]') {
-                console.log('[END] Marcador de final recibido');
-                return;
-              }
-              
-              try {
-                console.log('[PARSE] Intentando parsear JSON...');
-                const data = JSON.parse(line);
-                console.log('[PARSE] JSON parseado:', data);
-                
-                if (data.error) {
-                  console.error('[BACKEND ERROR] Error del servidor:', data.error);
-                  throw new Error(data.error);
-                }
-                
-                if (!metadata) {
-                  console.log('[METADATA] Recibidos metadatos:', data);
-                  metadata = data as Metadata;
-                  continue;
-                }
-                
-                const chunk = data as ChunkData;
-                console.log(`[CHUNK] Recibido chunk ${chunk.chunk_index + 1}/${metadata.num_chunks} con ${chunk.rows.length} filas`);
-                // console.log("Nuevas filas: ", chunk.rows);
-
-                // Actualizar grid con las nuevas filas
-                // console.log("grid: ", grid);
-                await updateGrid(chunk.rows, grid!);
-
-                // ———> aquí: dejas respirar al navegador
-                await new Promise(resolve => requestAnimationFrame(resolve));
-
-                chunkCount++;
-                console.log("CHUNK COUNT: ", chunkCount)
-              } catch (parseError) {
-                console.error('[PARSE ERROR] Error al parsear JSON:', parseError);
-                console.error('[RAW DATA] Contenido problemático:', line);
-                throw new Error(`Error de parseo: ${parseError}`);
-              }
-            }
-          }
-        } finally {
-          console.log('[CLEANUP] Liberando lector...');
-          reader.releaseLock();
-        }
-      } catch (error) {
-        console.error('[PROCESS ERROR] Error en processStream:', error);
-        if (error instanceof Error) {
-          console.error('[ERROR DETAILS]', error.name, error.message, error.stack);
-        }
-      }
-    };
-
-    console.log("Initialize process stream");
-    processStream();
-
-  }, [rowCount]);
+  }, [containerReady]);
 
 
   useEffect(() => {

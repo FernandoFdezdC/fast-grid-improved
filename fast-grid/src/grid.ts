@@ -54,6 +54,9 @@ export class Grid {
 
   columnWidths: number[] = [];
 
+  onReachBottom?: () => void;   // Whenever the Y scrollbar reaches the bottom,
+                                // this method is triggered
+
   resizeObserver: ResizeObserver;
   constructor(container: HTMLDivElement, rows: Rows, headers: string[]) {
     this.container = container;

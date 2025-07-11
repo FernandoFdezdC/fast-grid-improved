@@ -135,6 +135,20 @@ export class Scrollbar {
 
     const state2 = this.grid.getState();
     this.translateThumbY(state2.thumbOffsetY);
+
+    // —————— If scrollbar reaches the bottom of the slider ——————
+    const trackHeight = this.trackY.clientHeight;
+    const { thumbSizeY, scrollableHeight } = state2;
+
+    // 1) si el thumb ocupa toda la pista, no hay scroll posible: salimos
+    if (thumbSizeY >= trackHeight) return;
+
+    // 2) si estamos en el fondo, alternamos la bandera
+    if (this.grid.offsetY === scrollableHeight) {
+      // Notificar al grid que se llegó al final
+      this.grid.onReachBottom?.();
+    }
+    // ————————————————————————
   };
   scrollBy = (x?: number, y?: number) => {
     let renderRows = false;

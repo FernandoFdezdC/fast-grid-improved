@@ -120,7 +120,7 @@ export const updateGrid = async (
   }
 
   // Actualizar grid
-  grid.computeColumnWidths();
+  // grid.computeColumnWidths();
   grid.renderViewportRows();
   grid.renderViewportCells();
   grid.scrollbar.refreshThumb();
