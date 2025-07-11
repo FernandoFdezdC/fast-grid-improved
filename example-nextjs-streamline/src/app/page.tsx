@@ -24,7 +24,7 @@ export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [grid, setGrid] = useState<Grid | null>(null);
   const [speed, setSpeed] = useState(0);
-  const [rowCount, setRowCount] = useState(2);
+  const [rowCount, setRowCount] = useState<number>(0);
   const [stressTest, setStressTest] = useState(false);
   const [loadingRows, setLoadingRows] = useState(false);
   const [autoScroller, setAutoScroller] = useState<AutoScroller | null>(null);
@@ -151,6 +151,7 @@ export default function Home() {
               // Actualizar grid con las nuevas filas
               // console.log("grid: ", grid);
               await updateGrid(chunk.rows, grid!);
+              setRowCount(grid.rowManager.rows.length);
 
               // ———> aquí: dejas respirar al navegador
               await new Promise(resolve => requestAnimationFrame(resolve));
@@ -179,7 +180,7 @@ export default function Home() {
 
   // Actualizar la referencia cuando cambia la función
   useEffect(() => {
-    console.log("Number of rows: ", grid?.rowManager.rows.length)
+    // console.log("Number of rows: ", grid?.rowManager.rows.length)
     loadMoreRef.current = loadMoreData;
   }, [loadMoreData]);
 
@@ -210,7 +211,7 @@ export default function Home() {
 
     const loadAndInitialize = async () => {
       try {
-        const gridFirstData = await loadWholeDataFromBackend(0, 17);
+        const gridFirstData = await loadWholeDataFromBackend(0, 25);
         const dataColumns = await getJSONColumns(gridFirstData);
         
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -228,6 +229,8 @@ export default function Home() {
 
         setLoadingRows(true);
         await initializeGrid(gridFirstData, newGrid, () => setLoadingRows(false));
+
+        setRowCount(newGrid.rowManager.rows.length);
         
         const autoScroller = new AutoScroller(newGrid);
         setAutoScroller(autoScroller);
@@ -423,22 +426,9 @@ export default function Home() {
             {stressTest ? "Filtering 3 times per second" : "Stress test"}
           </button>
         </div>
-        <input
-          type="text"
-          defaultValue={rowCount.toLocaleString()} // Usar defaultValue en lugar de value
-          onBlur={(e) => {
-            const numericValue = parseInt(e.target.value.replace(/[^0-9]/g, ''), 10) || 0;
-            if (numericValue !== rowCount) {
-              setRowCount(numericValue); // Actualizar rowCount solo si cambió
-            }
-            e.target.value = numericValue.toLocaleString(); // Formatear después de validar
-          }}
-          onFocus={(e) => {
-            e.target.value = rowCount.toString(); // Mostrar número sin formato al enfocar
-          }}
-          className="hidden h-[28px] w-[150px] items-center justify-center rounded border border-gray-800 bg-white text-[12px] text-gray-700 shadow-[rgba(0,_0,_0,_0.1)_0px_0px_2px_1px] md:flex"
-          placeholder="Número de filas"
-        />
+        <span className="h-[28px] w-[150px] flex items-center justify-center rounded border border-gray-800 bg-white text-[12px] text-gray-700 shadow-[rgba(0,_0,_0,_0.1)_0px_0px_2px_1px] md:flex">
+          {rowCount.toLocaleString()} rows
+        </span>
 
         {rowCount > 1_000_000 && (
           <div className="text-xs text-red-500 -mt-1 ml-2"> {/* Ajuste de posición */}
