@@ -94,7 +94,6 @@ export default function Home() {
   }, [containerReady]); // Añadir containerReady como dependencia
 
   useEffect(() => {
-    
     if (!grid) return;            // solo si grid ya existe
 
     // Load remaining data
@@ -155,7 +154,7 @@ export default function Home() {
             
             for (let i = 0; i < lines.length; i++) {
               const line = lines[i];
-              console.log(`[LINE ${i}] Contenido:`, line);
+              // console.log(`[LINE ${i}] Contenido:`, line);
               
               if (!line.trim()) {
                 console.log('[LINE SKIP] Línea vacía, omitiendo');
@@ -185,10 +184,10 @@ export default function Home() {
                 
                 const chunk = data as ChunkData;
                 console.log(`[CHUNK] Recibido chunk ${chunk.chunk_index + 1}/${metadata.num_chunks} con ${chunk.rows.length} filas`);
-                console.log("Nuevas filas: ", chunk.rows);
+                // console.log("Nuevas filas: ", chunk.rows);
 
                 // Actualizar grid con las nuevas filas
-                console.log("grid: ", grid);
+                // console.log("grid: ", grid);
                 await updateGrid(chunk.rows, grid!);
 
                 // ———> aquí: dejas respirar al navegador
@@ -215,9 +214,10 @@ export default function Home() {
       }
     };
 
+    console.log("Initialize process stream");
     processStream();
 
-  }, [grid]);
+  }, [rowCount]);
 
 
   useEffect(() => {

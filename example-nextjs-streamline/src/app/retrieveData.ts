@@ -73,57 +73,45 @@ export const updateGrid = async (
   data: any[], // Array de objetos con los datos
   grid: Grid,
 ) => {
+  let cellIndex = 0;
+
   // Obtener el número de filas existentes en el grid
   const offsetRows = grid.rowManager.rows.length;
   const rows: Rows = [];
-  
-  // Extraer keys del primer objeto para tener orden consistente
-  const keys = data.length > 0 ? Object.keys(data[0]) : [];
 
   let lastYieldTime = performance.now();
 
-  for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
-    // Calcular el número de índice global (fila actual + filas existentes)
-    const globalRowIndex = offsetRows + rowIdx + 1;
-    
-    // Control de rendimiento
-    if (rowIdx % 1000 === 0 && shouldYield(lastYieldTime)) {
+  for (let rowIdx = offsetRows; rowIdx < data.length + offsetRows; rowIdx++) {
+    // Control de rendimiento simplificado
+    if (rowIdx % 10000 === 0 && shouldYield(lastYieldTime)) {
       await new Promise(resolve => setTimeout(resolve, 0));
-      grid.rowManager.addRows(rows, true);
-      rows.length = 0; // Limpiar el array para liberar memoria
+      grid.rowManager.setRows(rows, true);
       lastYieldTime = performance.now();
     }
 
     const cells: Cell[] = [{
-      id: -globalRowIndex, // ID único basado en índice global
-      v: String(globalRowIndex) // Celda de índice con número consecutivo
+      id: -rowIdx - 1,
+      v: String(rowIdx + 1)
     }];
 
-    const rowData = data[rowIdx];
+    const columns = data[rowIdx-offsetRows];
+    // console.log("columns: ", columns)
     
-    // Procesar cada columna en orden consistente
-    for (const key of keys) {
-      let value = rowData[key];
+    for (const key in columns) {
+      let value: string | number = columns[key];
+      const numericValue = Number(value);
       
-      // Manejo especial para fechas
-      if (value instanceof Date) {
-        value = value.toISOString();
+      if (!isNaN(numericValue) && value !== "") {
+        value = numericValue;
       }
-      // Manejo de números decimales
-      else if (typeof value === 'number' && !Number.isInteger(value)) {
-        value = parseFloat(value.toFixed(4));
-      }
-      
+
       cells.push({
-        id: globalRowIndex * 1000 + cells.length, // ID único
+        id: cellIndex++,
         v: value
       } as Cell);
     }
 
-    rows.push({ 
-      id: globalRowIndex, // ID único global para la fila
-      cells 
-    } as Row);
+    rows.push({ id: rowIdx, cells } as Row);
   }
   
   // Añadir las filas restantes
