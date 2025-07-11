@@ -162,6 +162,40 @@ export class RowManager {
     console.log('► main → set-rows', rows.length, 'filas');
   };
 
+  /**
+   * Agrega filas de forma incremental sin reemplazar todo el dataset
+   * @param newRows Nuevas filas a agregar
+   * @param skipSendToWorker Si se debe omitir enviar al worker
+   */
+  addRows = (newRows: Rows, skipSendToWorker: boolean = false) => {
+    // Actualizar el conjunto completo de filas
+    this.rows = [...this.rows, ...newRows];
+    
+    // Mantener el estado actual de la vista (filtros/orden)
+    this.isViewResult = false;
+
+    // Actualizar la visualización del grid
+    this.grid.scrollbar.setScrollOffsetY(this.grid.offsetY);
+    this.grid.scrollbar.setScrollOffsetX(this.grid.offsetX);
+    this.grid.renderViewportRows();
+    this.grid.scrollbar.refreshThumb();
+
+    // Comunicar al worker si está disponible
+    if (!skipSendToWorker && this.workerAvailable && this.viewWorker) {
+      const t0 = performance.now();
+      
+      // Enviar solo las nuevas filas al worker
+      this.viewWorker.postMessage({
+        type: "add-rows",
+        rows: newRows,
+      } satisfies AddRowsEvent);
+      
+      console.log("Ms to add rows to worker", performance.now() - t0);
+    }
+
+    console.log('► main → add-rows', newRows.length, 'filas. Total:', this.rows.length);
+  };
+
   runFilter = () => {
     this.updateView('filter');
   };
@@ -210,3 +244,9 @@ export class RowManager {
     return isEmptyFast(this.view.filter) && isEmptyFast(this.view.sort);
   };
 }
+
+// Nuevo tipo de evento para añadir filas
+export type AddRowsEvent = {
+  type: "add-rows";
+  rows: Rows;
+};

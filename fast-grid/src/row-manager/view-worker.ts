@@ -280,6 +280,37 @@ const handleEvent = async (event: Message) => {
       }
       return;
     }
+    case "add-rows": {
+      // Agregar las nuevas filas al dataset existente
+      rowData = [...rowData, ...message.rows];
+      
+      // Actualizar cachés y tipos de columna
+      cache.sort = null;
+      cache.sortKey = null;
+      
+      // Actualizar tipos de columna si hay nuevas columnas
+      if (rowData.length > 0) {
+        const firstRow = rowData[0];
+        const lastRow = rowData[rowData.length - 1];
+        
+        // Verificar si hay nuevas columnas en las filas añadidas
+        for (let col = firstRow.cells.length; col < lastRow.cells.length; col++) {
+          let isNumeric = true;
+          
+          // Muestra de las primeras filas para determinar el tipo
+          for (let i = 0; i < Math.min(100, rowData.length); i++) {
+            const val = rowData[i].cells[col]?.v;
+            if (typeof val !== 'number' && isNaN(Number(val))) {
+              isNumeric = false;
+              break;
+            }
+          }
+          
+          cache.columnTypes.set(col, isNumeric ? 'number' : 'string');
+        }
+      }
+      return;
+    }
   }
 };
 
@@ -294,7 +325,13 @@ export type SetRowsEvent = {
   rows: Rows;
 };
 
-export type Message = MessageEvent<ComputeViewEvent | SetRowsEvent>;
+// Nuevo tipo de mensaje
+type AddRowsEvent = {
+  type: "add-rows";
+  rows: Rows;
+};
+
+export type Message = MessageEvent<ComputeViewEvent | SetRowsEvent | AddRowsEvent>;
 
 if (typeof self !== "undefined") {
   self.addEventListener("message", (event: Message) => {

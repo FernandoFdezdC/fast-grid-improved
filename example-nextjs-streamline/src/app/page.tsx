@@ -5,15 +5,26 @@ import Stats from "stats.js";
 import { Analytics } from "@vercel/analytics/react";
 import { Grid } from "fast-grid";
 import { FilterCell, HeaderCell } from "fast-grid";
-import { loadCSV, getCSVFromPublic, getCSVColumns } from "@/app/loadCSV";
+import { initializeGrid, updateGrid, loadWholeDataFromBackend, getJSONColumns } from "@/app/retrieveData";
 import { useState, useRef, useEffect } from "react";
 
+interface ChunkData {
+  chunk_index: number;
+  rows: any[];
+}
+
+interface Metadata {
+  total_rows: number;
+  effective_limit: number;
+  chunk_size: number;
+  num_chunks: number;
+}
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [grid, setGrid] = useState<Grid | null>(null);
   const [speed, setSpeed] = useState(0);
-  const [rowCount, setRowCount] = useState(500);
+  const [rowCount, setRowCount] = useState(2);
   const [stressTest, setStressTest] = useState(false);
   const [loadingRows, setLoadingRows] = useState(false);
   const [autoScroller, setAutoScroller] = useState<AutoScroller | null>(null);
@@ -49,19 +60,22 @@ export default function Home() {
 
     const loadAndInitialize = async () => {
       try {
-        const csvFile = await getCSVFromPublic();
-        const csvColumns = await getCSVColumns(csvFile);
+        const gridFirstData = await loadWholeDataFromBackend(0, 30);
+        const dataColumns = await getJSONColumns(gridFirstData);
+
+        console.log("Grid first data: ", gridFirstData)
+        console.log(dataColumns)
         
         // SOLUCIÓN: Esperar al próximo ciclo de renderizado
         await new Promise(resolve => setTimeout(resolve, 0));
         
         const t0 = performance.now();
-        const newGrid = new Grid(container, [], ['Index', ...csvColumns]);
+        const newGrid = new Grid(container, [], ['Index', ...dataColumns]);
         setGrid(newGrid);
         console.info("Ms to initialize grid:", performance.now() - t0);
 
         setLoadingRows(true);
-        await loadCSV(csvFile, newGrid, () => setLoadingRows(false), rowCount);
+        await initializeGrid(gridFirstData, newGrid, () => setLoadingRows(false));
         
         const autoScroller = new AutoScroller(newGrid);
         setAutoScroller(autoScroller);
@@ -77,7 +91,134 @@ export default function Home() {
     };
 
     loadAndInitialize();
-  }, [rowCount, containerReady]); // Añadir containerReady como dependencia
+  }, [containerReady]); // Añadir containerReady como dependencia
+
+  useEffect(() => {
+    
+    if (!grid) return;            // solo si grid ya existe
+
+    // Load remaining data
+    const processStream = async () => {
+      try {
+        const controller = new AbortController();
+        const signal = controller.signal;
+        
+        // Timeout para evitar bloqueos
+        const timeoutId = setTimeout(() => {
+          console.warn('[TIMEOUT] La solicitud tardó demasiado, abortando...');
+          controller.abort();
+        }, 30000);  // 30 segundos timeout
+
+        console.log('[FETCH] Realizando petición a http://localhost:8000/api/datos?offset='+grid.rowManager.rows.length+'&limit=50');
+        const response = await fetch('http://localhost:8000/api/datos?offset='+grid.rowManager.rows.length+'&limit=50', {
+          signal
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('[FETCH] Respuesta recibida. Estado:', response.status);
+        
+        if (!response.ok) {
+          console.error('[ERROR] Respuesta no OK:', response.status, response.statusText);
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        if (!response.body) {
+          console.error('[ERROR] Response.body es null');
+          throw new Error('No se recibió cuerpo de respuesta');
+        }
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        let metadata: Metadata | null = null;
+        let chunkCount = 0;
+        
+        try {
+          while (true) {
+            console.log('[READER] Leyendo chunk...');
+            const { done, value } = await reader.read();
+            console.log('[READER] Resultado:', { done, value: value ? `bytes:${value.length}` : 'null' });
+            
+            if (done) {
+              console.log('[STREAM] Stream completado por done=true');
+              break;
+            }
+            
+            const decodedChunk = decoder.decode(value, { stream: true });
+            console.log('[DECODER] Chunk decodificado:', decodedChunk.length, 'caracteres');
+            buffer += decodedChunk;
+            console.log('[BUFFER] Buffer actual:', buffer.length, 'caracteres');
+            
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            console.log('[PARSER] Líneas completas:', lines.length, 'Buffer pendiente:', buffer.length);
+            
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i];
+              console.log(`[LINE ${i}] Contenido:`, line);
+              
+              if (!line.trim()) {
+                console.log('[LINE SKIP] Línea vacía, omitiendo');
+                continue;
+              }
+              
+              if (line.trim() === '[END]') {
+                console.log('[END] Marcador de final recibido');
+                return;
+              }
+              
+              try {
+                console.log('[PARSE] Intentando parsear JSON...');
+                const data = JSON.parse(line);
+                console.log('[PARSE] JSON parseado:', data);
+                
+                if (data.error) {
+                  console.error('[BACKEND ERROR] Error del servidor:', data.error);
+                  throw new Error(data.error);
+                }
+                
+                if (!metadata) {
+                  console.log('[METADATA] Recibidos metadatos:', data);
+                  metadata = data as Metadata;
+                  continue;
+                }
+                
+                const chunk = data as ChunkData;
+                console.log(`[CHUNK] Recibido chunk ${chunk.chunk_index + 1}/${metadata.num_chunks} con ${chunk.rows.length} filas`);
+                console.log("Nuevas filas: ", chunk.rows);
+
+                // Actualizar grid con las nuevas filas
+                console.log("grid: ", grid);
+                await updateGrid(chunk.rows, grid!);
+
+                // ———> aquí: dejas respirar al navegador
+                await new Promise(resolve => requestAnimationFrame(resolve));
+
+                chunkCount++;
+                console.log("CHUNK COUNT: ", chunkCount)
+              } catch (parseError) {
+                console.error('[PARSE ERROR] Error al parsear JSON:', parseError);
+                console.error('[RAW DATA] Contenido problemático:', line);
+                throw new Error(`Error de parseo: ${parseError}`);
+              }
+            }
+          }
+        } finally {
+          console.log('[CLEANUP] Liberando lector...');
+          reader.releaseLock();
+        }
+      } catch (error) {
+        console.error('[PROCESS ERROR] Error en processStream:', error);
+        if (error instanceof Error) {
+          console.error('[ERROR DETAILS]', error.name, error.message, error.stack);
+        }
+      }
+    };
+
+    processStream();
+
+  }, [grid]);
+
 
   useEffect(() => {
     if (grid == null || !stressTest) return;
