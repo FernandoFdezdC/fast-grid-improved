@@ -9,19 +9,9 @@ const getViewWorker = () => {
   if (typeof window === 'undefined') return null;
   
   try {
-    if (process.env.NODE_ENV === 'production') {
-      // Ruta absoluta para producción
-      const workerUrl = new URL(
-        '/_next/static/chunks/workers/fast-grid-worker.js', 
-        window.location.origin
-      );
-      return new Worker(workerUrl, { type: 'module' });
-    } else {
-      // Desarrollo
-      return new Worker(new URL("./view-worker", import.meta.url), {
-        type: "module"
-      });
-    }
+    return new Worker(new URL("./view-worker", import.meta.url), {
+      type: "module"
+    });
   } catch (e) {
     console.error("Worker creation failed", e);
     return null;

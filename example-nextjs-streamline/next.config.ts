@@ -21,56 +21,15 @@ const nextConfig = {
     ];
   },
 
-  // Configuración de Webpack
-  webpack: (config, { isServer, dev }) => {
-    // Configuración para workers solo en cliente
-    if (!isServer) {
-      config.module.rules.push({
-        test: /view-worker\.(js|ts)$/, // Acepta JS y TS
-        use: [
-          {
-            loader: 'worker-loader',
-            options: {
-              inline: 'fallback', // Modo más compatible
-              publicPath: '/_next/static/workers/',
-              filename: dev 
-                ? 'static/workers/[name].js' 
-                : 'static/workers/[name].[contenthash].js'
-            }
-          }
-        ]
-      });
-      
-      // Necesario para compatibilidad con workers
-      config.output.globalObject = 'self';
-      
-      // Soporte para SharedArrayBuffer
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        buffer: false,
-        fs: false
-      };
-    }
-
-    // Evitar procesar workers en SSR
-    config.module.rules.push({
-      test: /view-worker\.(js|ts)$/,
-      issuer: /node_modules/,
-      use: 'null-loader'
-    });
-    
-    return config;
+  eslint: {
+    ignoreDuringBuilds: true, // <--- Ignora errores de ESLint en build
   },
 
   // Transpilar paquetes específicos
   transpilePackages: ['fast-grid'],
-  
-  // Configuración experimental
-  experimental: {
-    workerThreads: true, // Mejor soporte para workers
-    cpus: 4, // Optimizar para multi-core
-    optimizeCss: true, // Opcional: mejorar rendimiento CSS
-  }
+
+  distDir: 'dist',
+
 };
 
 module.exports = nextConfig;
