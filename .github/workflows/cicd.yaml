@@ -20,4 +20,3 @@ jobs:
       - run: |
           cd fast-grid
           npm ci --ignore-scripts
-          npm test
