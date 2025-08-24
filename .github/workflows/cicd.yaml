@@ -20,7 +20,7 @@ jobs:
       - run: |
           cd fast-grid
           npm ci --ignore-scripts
-          npm build
+          npm run build
   
   deploy:
     runs-on: ubuntu-latest
