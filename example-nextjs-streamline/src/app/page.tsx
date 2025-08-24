@@ -10,7 +10,13 @@ import { useState, useRef, useEffect, useCallback } from "react";
 
 interface ChunkData {
   chunk_index: number;
-  rows: any[];
+  rows: unknown[];
+}
+
+declare global {
+  interface Window {
+    __grid?: Grid;
+  }
 }
 
 interface Metadata {
@@ -30,7 +36,7 @@ export default function Home() {
   const [autoScroller, setAutoScroller] = useState<AutoScroller | null>(null);
 
   // Usar useRef para mantener una referencia a la función de carga
-  const loadMoreRef = useRef<() => void>();
+  const loadMoreRef = useRef<(() => void) | null>(null);
   const [containerReady, setContainerReady] = useState(false);
 
   useEffect(() => {
@@ -52,7 +58,6 @@ export default function Home() {
 
   // Añadir estados para controlar la carga
   const isFetchingRef = useRef(false);
-  const [hasMore, setHasMore] = useState(true);
 
   // Función para cargar más datos
   const loadMoreData = useCallback(async () => {
@@ -176,7 +181,7 @@ export default function Home() {
         console.error('[ERROR DETAILS]', error.name, error.message, error.stack);
       }
     }
-  }, [grid, hasMore]);
+  }, [grid]);
 
   // Actualizar la referencia cuando cambia la función
   useEffect(() => {
@@ -234,7 +239,7 @@ export default function Home() {
         
         const autoScroller = new AutoScroller(newGrid);
         setAutoScroller(autoScroller);
-        (window as any).__grid = newGrid;
+        window.__grid = newGrid;
         
       } catch (error) {
         console.error('Error:', error);
@@ -353,7 +358,7 @@ export default function Home() {
       {/* Encabezado centrado */}
       <div className="flex flex-col items-center w-full max-w-6xl mb-1"> {/* Contenedor para centrar contenido */}
         <h1 className="text-lg font-bold sm:text-xl md:text-3xl text-center mb-0">
-          World's most performant DOM-based table in Next.js
+          World&apos;s most performant DOM-based table in Next.js
         </h1>
         <div className="mt-1 text-center max-w-2xl">
           Try make the fps counter drop by filtering, sorting, and scrolling simultaneously
