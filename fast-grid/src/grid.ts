@@ -412,19 +412,39 @@ export class Grid {
   // TODO(gab): should only be done on X scroll, row reusing and creating a new row
   renderViewportCells = () => {
     const state = this.getState();
+    // ensure rows were rendered before trying to render cells
+    if (Object.keys(this.rowComponentMap).length === 0) {
+      // if we haven't yet created DOM rows, create them now
+      this.renderViewportRows();
+    }
+
     const viewBuffer = this.rowManager.getViewBuffer();
 
     for (let i = state.startRow; i < state.endRow; i++) {
-      let rowComponent: RowComponent | null = null;
+      let rowIndex: number;
       if (viewBuffer != null) {
-        rowComponent = this.rowComponentMap[Atomics.load(viewBuffer.buffer, i)];
+        // buffer stores indices into rowsArr
+        rowIndex = Atomics.load(viewBuffer.buffer, i);
       } else {
-        rowComponent = this.rowComponentMap[i];
+        // when no buffer, the grid row index is i
+        rowIndex = i;
       }
-      if (rowComponent == null) {
-        console.error("row should exist. did you render rows first?");
+
+      const rowsArr = this.rowManager.rows;
+      const rowObj = rowsArr[rowIndex];
+      if (!rowObj) {
+        console.error("renderViewportCells: no row object for index", rowIndex);
         continue;
       }
+
+      // LOOKUP BY row.id — this matches how renderViewportRows stores components
+      const rowComponent = this.rowComponentMap[rowObj.id];
+
+      if (!rowComponent) {
+        console.error("row should exist. did you render rows first? (missing id)", rowObj.id);
+        continue;
+      }
+
       rowComponent.renderCells();
     }
 
