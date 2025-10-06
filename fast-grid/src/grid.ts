@@ -236,7 +236,7 @@ export class Grid {
     const endRow = Math.min(startRow + rowsPerViewport, numRows);
     const rowOffset = -Math.floor(this.offsetY % ROW_HEIGHT);
 
-    const scrollableHeight = Math.max(tableHeight - this.viewportHeight, 0);
+    const scrollableHeight = Math.max(tableHeight - this.viewportHeight, 0) + 2.3 * ROW_HEIGHT;
 
     const scrollThumbYPct =
       tableHeight === 0
