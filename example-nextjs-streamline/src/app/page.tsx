@@ -35,7 +35,7 @@ export default function Home() {
   const [loadingRows, setLoadingRows] = useState(false);
   const [autoScroller, setAutoScroller] = useState<AutoScroller | null>(null);
 
-  // Usar useRef para mantener una referencia a la función de carga
+  // Use useRef to keep a reference to the load function
   const loadMoreRef = useRef<(() => void) | null>(null);
   const [containerReady, setContainerReady] = useState(false);
 
@@ -56,10 +56,10 @@ export default function Home() {
     return () => observer.disconnect();
   }, []);
 
-  // Añadir estados para controlar la carga
+  // Add states to control the load
   const isFetchingRef = useRef(false);
 
-  // Función para cargar más datos
+  // Function to load more data
   const loadMoreData = useCallback(async () => {
     if (!grid) return;
     console.log("LOAD MORE DATA");
@@ -71,17 +71,17 @@ export default function Home() {
       
       // Timeout para evitar bloqueos
       const timeoutId = setTimeout(() => {
-        console.warn('[TIMEOUT] La solicitud tardó demasiado, abortando...');
+        console.warn('[TIMEOUT] The application took too long, aborting...');
         controller.abort();
       }, 30000);  // 30 segundos timeout
 
-      console.log('[FETCH] Realizando petición a http://localhost:8000/api/datos?offset='+grid.rowManager.rows.length+'&limit=50');
-      const response = await fetch('http://localhost:8000/api/datos?offset='+grid.rowManager.rows.length+'&limit=50', {
+      console.log('[FETCH] Calling endpoint http://localhost:8000/api/stream?table=seguimientoventas&offset='+grid.rowManager.rows.length+'&limit=50');
+      const response = await fetch('http://localhost:8000/api/stream?table=seguimientoventas&offset='+grid.rowManager.rows.length+'&limit=50', {
         signal
       });
       
       clearTimeout(timeoutId);
-      console.log('[FETCH] Respuesta recibida. Estado:', response.status);
+      console.log('[FETCH] Response received. State:', response.status);
       
       if (!response.ok) {
         console.error('[ERROR] Respuesta no OK:', response.status, response.statusText);
@@ -89,8 +89,8 @@ export default function Home() {
       }
       
       if (!response.body) {
-        console.error('[ERROR] Response.body es null');
-        throw new Error('No se recibió cuerpo de respuesta');
+        console.error('[ERROR] Response.body is null');
+        throw new Error('No response body received');
       }
       
       const reader = response.body.getReader();
@@ -101,99 +101,99 @@ export default function Home() {
       
       try {
         while (true) {
-          console.log('[READER] Leyendo chunk...');
+          console.log('[READER] Reading chunk...');
           const { done, value } = await reader.read();
-          console.log('[READER] Resultado:', { done, value: value ? `bytes:${value.length}` : 'null' });
+          console.log('[READER] Result:', { done, value: value ? `bytes:${value.length}` : 'null' });
           
           if (done) {
-            console.log('[STREAM] Stream completado por done=true');
+            console.log('[STREAM] Stream completed by done=true');
             break;
           }
           
           const decodedChunk = decoder.decode(value, { stream: true });
-          console.log('[DECODER] Chunk decodificado:', decodedChunk.length, 'caracteres');
+          console.log('[DECODER] Chunk decodified:', decodedChunk.length, 'characters');
           buffer += decodedChunk;
-          console.log('[BUFFER] Buffer actual:', buffer.length, 'caracteres');
+          console.log('[BUFFER] Current buffer:', buffer.length, 'characters');
           
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
-          console.log('[PARSER] Líneas completas:', lines.length, 'Buffer pendiente:', buffer.length);
+          console.log('[PARSER] Complete lines:', lines.length, 'Pending buffer:', buffer.length);
           
           for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             // console.log(`[LINE ${i}] Contenido:`, line);
             
             if (!line.trim()) {
-              console.log('[LINE SKIP] Línea vacía, omitiendo');
+              console.log('[LINE SKIP] Empty line, omitting');
               continue;
             }
             
             if (line.trim() === '[END]') {
-              console.log('[END] Marcador de final recibido');
+              console.log('[END] End marker received');
               return;
             }
             
             try {
-              console.log('[PARSE] Intentando parsear JSON...');
+              console.log('[PARSE] Parsing JSON...');
               const data = JSON.parse(line);
-              console.log('[PARSE] JSON parseado:', data);
+              console.log('[PARSE] JSON parsed:', data);
               
               if (data.error) {
-                console.error('[BACKEND ERROR] Error del servidor:', data.error);
+                console.error('[BACKEND ERROR] Server error:', data.error);
                 throw new Error(data.error);
               }
               
               if (!metadata) {
-                console.log('[METADATA] Recibidos metadatos:', data);
+                console.log('[METADATA] Received metadata:', data);
                 metadata = data as Metadata;
                 continue;
               }
               
               const chunk = data as ChunkData;
-              console.log(`[CHUNK] Recibido chunk ${chunk.chunk_index + 1}/${metadata.num_chunks} con ${chunk.rows.length} filas`);
-              // console.log("Nuevas filas: ", chunk.rows);
+              console.log(`[CHUNK] Receiving chunk ${chunk.chunk_index + 1}/${metadata.num_chunks} con ${chunk.rows.length} filas`);
+              // console.log("New rows: ", chunk.rows);
 
-              // Actualizar grid con las nuevas filas
+              // Update grid with new rows
               // console.log("grid: ", grid);
               await updateGrid(chunk.rows, grid!);
               setRowCount(grid.rowManager.rows.length);
 
-              // ———> aquí: dejas respirar al navegador
+              // ———> here: let the browser breathe
               await new Promise(resolve => requestAnimationFrame(resolve));
 
               chunkCount++;
               console.log("CHUNK COUNT: ", chunkCount)
             } catch (parseError) {
-              console.error('[PARSE ERROR] Error al parsear JSON:', parseError);
-              console.error('[RAW DATA] Contenido problemático:', line);
-              throw new Error(`Error de parseo: ${parseError}`);
+              console.error('[PARSE ERROR] Error parsing JSON:', parseError);
+              console.error('[RAW DATA] Problematic content:', line);
+              throw new Error(`Parsing error: ${parseError}`);
             }
           }
         }
       } finally {
-        console.log('[CLEANUP] Liberando lector...');
+        console.log('[CLEANUP] Releasing reader...');
         reader.releaseLock();
         isFetchingRef.current = false;
       }
     } catch (error) {
-      console.error('[PROCESS ERROR] Error en processStream:', error);
+      console.error('[PROCESS ERROR] Error in processStream:', error);
       if (error instanceof Error) {
         console.error('[ERROR DETAILS]', error.name, error.message, error.stack);
       }
     }
   }, [grid]);
 
-  // Actualizar la referencia cuando cambia la función
+  // Update the reference when the function changes
   useEffect(() => {
     // console.log("Number of rows: ", grid?.rowManager.rows.length)
     loadMoreRef.current = loadMoreData;
   }, [loadMoreData]);
 
-  // Modificar el callback en el grid para usar debounce
+  // Modify the callback in the grid to use debounce
   useEffect(() => {
     if (!grid) return;
     
-    // Implementar debounce manual
+    // Implement manual debounce
     let timeoutId: NodeJS.Timeout;
     
     grid.onReachBottom = () => {
@@ -204,7 +204,7 @@ export default function Home() {
         if (loadMoreRef.current) {
           loadMoreRef.current();
         }
-      }, 100); // 100ms de debounce
+      }, 100); // 100ms debounce
     };
   }, [grid]);
 
@@ -224,7 +224,7 @@ export default function Home() {
         const newGrid = new Grid(container, [], ['Index', ...dataColumns]);
         setGrid(newGrid);
 
-        // Configurar el callback para cuando se llegue al final
+        // Configure callback for when the end is reached
         newGrid.onReachBottom = () => {
           console.log("Reached bottom! Triggering load more...");
           if (loadMoreRef.current) {
@@ -321,7 +321,7 @@ export default function Home() {
 
   // Stats
   useEffect(() => {
-    // Verificar que estamos en el cliente
+    // Verify that we are at the customer
     if (typeof window !== 'undefined') {
       const setupFPS = () => {
         const stats = new Stats();
@@ -349,13 +349,13 @@ export default function Home() {
       
       setupFPS();
     }
-  }, []); // Array vacío = solo se ejecuta al montar el componente
+  }, []);
   
   return (
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 w-full">
       <Analytics />
 
-      {/* Encabezado centrado */}
+      {/* Centered header */}
       <div className="flex flex-col items-center w-full max-w-6xl mb-1"> {/* Contenedor para centrar contenido */}
         <h1 className="text-lg font-bold sm:text-xl md:text-3xl text-center mb-0">
           World&apos;s most performant DOM-based table in Next.js
@@ -374,7 +374,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Controles */}
+      {/* Controls */}
       <div className={clsx(
         "flex flex-col sm:flex-row flex-wrap justify-between gap-4 py-2 w-full max-w-6xl",
         loadingRows && "pointer-events-none select-none opacity-60"

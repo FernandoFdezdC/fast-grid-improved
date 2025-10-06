@@ -1,4 +1,4 @@
-In order to compile the module, run on fast-grid:
+In order to compile the module, run (on folder `fast-grid`):
 
 ```bash
 npm install --ignore-scripts

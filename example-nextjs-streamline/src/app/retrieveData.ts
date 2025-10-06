@@ -1,12 +1,12 @@
 import { Grid, Cell, Row, Rows } from "fast-grid";
 
-// Función para controlar el rendimiento
+// Performance monitoring function
 const shouldYield = (lastYieldTime: number): boolean => {
   return performance.now() - lastYieldTime > 16; // 16ms ≈ 60fps
 };
 
 export const initializeGrid = async (
-  data: any[], // Array de objetos con los datos
+  data: any[], // Array of objects with data
   grid: Grid,
   cb: () => void,
   rowCount?: number
@@ -17,11 +17,11 @@ export const initializeGrid = async (
   const totalRows = rowCount ? Math.min(rowCount, data.length) : data.length;
   let lastYieldTime = performance.now();
 
-  // Extraer keys del primer objeto para tener orden consistente
+  // Extract keys from the first object to have consistent ordering
   const keys = data.length > 0 ? Object.keys(data[0]) : [];
 
   for (let rowIdx = 0; rowIdx < totalRows; rowIdx++) {
-    // Control de rendimiento
+    // Performance control
     if (rowIdx % 1000 === 0 && shouldYield(lastYieldTime)) {
       await new Promise(resolve => setTimeout(resolve, 0));
       grid.rowManager.setRows(rows, true);
@@ -30,24 +30,24 @@ export const initializeGrid = async (
 
     const cells: Cell[] = [{
       id: -rowIdx - 1,
-      v: String(rowIdx + 1) // Celda de índice
+      v: String(rowIdx + 1) // Index cell
     }];
 
     const rowData = data[rowIdx];
     
-    // Procesar cada columna en orden consistente
+    // Process each column in consistent order
     for (const key of keys) {
       let value = rowData[key];
-      // Manejar null
+      // Handle null
       if (value === null) {
         value = '';
       }
-      // Manejo especial para fechas
+      // Special handling for dates
       if (value instanceof Date) {
         // console.log(value)
         value = value.toISOString();
       }
-      // Manejo de números decimales
+      // Decimal number handling
       else if (typeof value === 'number' && !Number.isInteger(value)) {
         value = parseFloat(value.toFixed(4));
       }
@@ -61,12 +61,12 @@ export const initializeGrid = async (
     rows.push({ id: rowIdx, cells } as Row);
   }
   
-  // Actualización final
+  // Final update
   await new Promise(resolve => setTimeout(resolve, 0));
   grid.rowManager.setRows(rows);
   cb();
 
-  // Actualizar grid
+  // Update grid
   grid.computeColumnWidths();
   grid.renderViewportRows();
   grid.renderViewportCells();
@@ -74,11 +74,11 @@ export const initializeGrid = async (
 };
 
 export const updateGrid = async (
-  data: any[], // Array de objetos con los datos
+  data: any[], // Array of objects with data
   grid: Grid,
 ) => {
   
-  // Obtener el número de filas existentes en el grid
+  // Get the number of rows in the grid
   const offsetRows = grid.rowManager.rows.length;
   // console.log("num columns: ", Object.keys(data[0]).length)
   let cellIndex = offsetRows*Object.keys(data[0]).length;
@@ -88,7 +88,7 @@ export const updateGrid = async (
   let lastYieldTime = performance.now();
 
   for (let rowIdx = offsetRows; rowIdx < data.length + offsetRows; rowIdx++) {
-    // Control de rendimiento simplificado
+    // Simplified performance control
     if (rowIdx % 10000 === 0 && shouldYield(lastYieldTime)) {
       await new Promise(resolve => setTimeout(resolve, 0));
       grid.rowManager.setRows(rows, true);
@@ -124,25 +124,25 @@ export const updateGrid = async (
     rows.push({ id: rowIdx, cells } as Row);
   }
   
-  // Añadir las filas restantes
+  // Add the remaining rows
   if (rows.length > 0) {
     grid.rowManager.addRows(rows);
   }
 
-  // Actualizar grid
+  // Update grid
   // grid.computeColumnWidths();
   grid.renderViewportRows();
   grid.renderViewportCells();
   grid.scrollbar.refreshThumb();
 };
 
-// Función para simular carga desde el backend
+// Function to simulate loading from the backend
 export const loadWholeDataFromBackend = async (
   offset: number = 0,
   limit: number = 500
 ): Promise<any[]> => {
   try {
-    const response = await fetch(`http://localhost:8000/api/datos?offset=${offset}&limit=${limit}`);
+    const response = await fetch(`http://localhost:8000/api/stream?table=seguimientoventas&offset=${offset}&limit=${limit}`);
     if (!response.ok) throw new Error('Error fetching data');
     
     const reader = response.body?.getReader();
@@ -184,13 +184,13 @@ export const loadWholeDataFromBackend = async (
   }
 };
 
-// Función para simular carga desde el backend
+// Function to simulate loading from the backend
 export const loadDataByChunksFromBackend = async (
   offset: number = 0,
   limit: number = 500
 ): Promise<any[]> => {
   try {
-    const response = await fetch(`http://localhost:8000/api/datos?offset=${offset}&limit=${limit}`);
+    const response = await fetch(`http://localhost:8000/api/stream?table=seguimientoventas&offset=${offset}&limit=${limit}`);
     if (!response.ok) throw new Error('Error fetching data');
     
     const reader = response.body?.getReader();
@@ -232,34 +232,34 @@ export const loadDataByChunksFromBackend = async (
   }
 };
 
-// Función recursiva para manejar objetos anidados
+// Recursive function to handle nested objects
 const extractNestedKeys = (obj: any, prefix: string, columnSet: Set<string>) => {
   for (const key in obj) {
     if (typeof obj[key] === 'object' && obj[key] !== null) {
-      // Recursión para objetos anidados
+      // Recursion for nested objects
       extractNestedKeys(obj[key], `${prefix}${key}.`, columnSet);
     } else {
-      // Añadir clave completa con prefijo
+      // Add full key with prefix
       columnSet.add(`${prefix}${key}`);
     }
   }
 };
 
-// Función auxiliar para extraer nombres de columnas
+// Auxiliary function to extract column names
 const extractColumnNames = (data: any[]): string[] => {
   if (data.length === 0) return [];
   
   const columnSet = new Set<string>();
   
-  // Recorrer todos los objetos para encontrar todas las posibles claves
+  // Scan through all objects to find all possible keys
   data.forEach(item => {
     if (typeof item === 'object' && item !== null) {
-      // Extraer claves del objeto actual
+      // Extract keys from the current object
       Object.keys(item).forEach(key => {
         columnSet.add(key);
       });
       
-      // Manejar objetos anidados (opcional)
+      // Handle nested objects (optional)
       extractNestedKeys(item, '', columnSet);
     }
   });
@@ -272,16 +272,16 @@ export const getJSONColumns = async (
 ): Promise<string[]> => {
   let data: any[] = [];
 
-  // Manejar diferentes tipos de entrada
+  // Handle different types of input
   if (Array.isArray(jsonInput)) {
     data = jsonInput;
   } 
   else if (typeof jsonInput === 'string') {
     try {
-      // Parsear si es un string JSON
+      // Parse if it is a JSON string
       data = JSON.parse(jsonInput);
     } catch {
-      // Asumir que es una URL
+      // Assume it is a URL
       const response = await fetch(jsonInput);
       data = await response.json();
     }
@@ -292,6 +292,6 @@ export const getJSONColumns = async (
     data = JSON.parse(text);
   }
 
-  // Extraer columnas de los datos
+  // Extract columns from data
   return extractColumnNames(data);
 };
