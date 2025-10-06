@@ -206,7 +206,7 @@ export default function Home() {
     
     grid.onReachBottom = () => {
       if (timeoutId) clearTimeout(timeoutId);
-      
+
       timeoutId = setTimeout(() => {
         console.log("Reached bottom! Triggering load more...");
         if (loadMoreRef.current && !isFetchingRef.current) {
@@ -445,7 +445,7 @@ export default function Home() {
 
         {rowCount > 1_000_000 && (
           <div className="text-xs text-red-500 -mt-1 ml-2"> {/* Ajuste de posición */}
-            ¡Advertencia! Valores altos pueden consumir mucha memoria
+            Warning! High values can consume a lot of memory
           </div>
         )}
       </div>
