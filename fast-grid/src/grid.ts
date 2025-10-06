@@ -112,13 +112,13 @@ export class Grid {
 
     this.columnWidths = new Array(this.numCols).fill(CELL_WIDTH);
 
-    // 1. Medir headers
+    // 1. Measure headers
     this.headerRows[1].cells.forEach((cell, i) => {
       tempEl.textContent = String(cell.v);
       this.columnWidths[i] = Math.max(this.columnWidths[i], tempEl.offsetWidth + 42);
     });
 
-    // 2. Medir celdas
+    // 2. Measure cells
     this.rowManager.rows.forEach(row => {
       row.cells.forEach((cell, i) => {
         tempEl.textContent = String(cell.v);
@@ -137,7 +137,7 @@ export class Grid {
         id: i,
         v: "",
       })),
-      offset,  // Fila de filtros en posición 0
+      offset,  // Filter row in position 0
       FilterCell,
       -2
     );
@@ -149,12 +149,12 @@ export class Grid {
         id: i,
         v: header,
       })),
-      ROW_HEIGHT,  // Fila de encabezado justo debajo
+      ROW_HEIGHT,  // Header row just below
       HeaderCell,
       -1
     );
 
-    // Aplicar estilos de apilamiento a toolsRow (filtros)
+    // Apply stacking styles to toolsRow (filters)
     Object.assign(toolsRow.el.style, {
       position: 'absolute',
       zIndex: '9',
@@ -167,12 +167,12 @@ export class Grid {
       willChange: 'transform'
     });
 
-    // Aplicar estilos de apilamiento a headerRow (encabezados)
+    // Apply stacking styles to headerRow (headers)
     Object.assign(headerRow.el.style, {
       position: 'absolute',
       zIndex: '9',
       backgroundColor: 'white',
-      top: `${ROW_HEIGHT}px`,  // Justo debajo de toolsRow
+      top: `${ROW_HEIGHT}px`,  // Just below toolsRow
       left: '0',
       width: '100%',
       height: `${ROW_HEIGHT}px`,
@@ -374,7 +374,7 @@ export class Grid {
       const existingRow = this.rowComponentMap[row.id];
       if (existingRow != null) {
         existingRow.setOffset(offset);
-        existingRow.absoluteIndex = i + 1; // Actualizar el índice si es necesario
+        existingRow.absoluteIndex = i + 1; // Update the index if necessary
         existingRow.updateBackground();
         continue;
       }
@@ -385,8 +385,8 @@ export class Grid {
         reuseRow.id = row.id;
         reuseRow.cells = row.cells;
         reuseRow.setOffset(offset);
-        reuseRow.absoluteIndex = i + 1; // Índice 1-based
-        reuseRow.updateBackground(); // Actualizar color
+        reuseRow.absoluteIndex = i + 1; // index 1-based
+        reuseRow.updateBackground(); // update color
         reuseRow.renderCells();
         this.rowComponentMap[row.id] = reuseRow;
         continue;
