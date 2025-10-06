@@ -139,10 +139,11 @@ export const updateGrid = async (
 // Function to simulate loading from the backend
 export const loadWholeDataFromBackend = async (
   offset: number = 0,
-  limit: number = 500
+  limit: number = 500,
+  filterParams: string | null = null  // optional
 ): Promise<any[]> => {
   try {
-    const response = await fetch(`http://localhost:8000/api/stream?table=seguimientoventas&offset=${offset}&limit=${limit}`);
+    const response = await fetch(`http://localhost:8000/api/stream?table=seguimientoventas&offset=${offset}&limit=${limit}&filters=${filterParams}`);
     if (!response.ok) throw new Error('Error fetching data');
     
     const reader = response.body?.getReader();
@@ -187,10 +188,11 @@ export const loadWholeDataFromBackend = async (
 // Function to simulate loading from the backend
 export const loadDataByChunksFromBackend = async (
   offset: number = 0,
-  limit: number = 500
+  limit: number = 500,
+  filterParams: string | null = null  // optional
 ): Promise<any[]> => {
   try {
-    const response = await fetch(`http://localhost:8000/api/stream?table=seguimientoventas&offset=${offset}&limit=${limit}`);
+    const response = await fetch(`http://localhost:8000/api/stream?table=seguimientoventas&offset=${offset}&limit=${limit}&filters=${filterParams}`);
     if (!response.ok) throw new Error('Error fetching data');
     
     const reader = response.body?.getReader();

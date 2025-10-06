@@ -39,6 +39,8 @@ export default function Home() {
   const loadMoreRef = useRef<(() => void) | null>(null);
   const [containerReady, setContainerReady] = useState(false);
 
+  let filterParams = "%26Producto%3D0+min+%252B+0MB";
+
   useEffect(() => {
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -62,6 +64,10 @@ export default function Home() {
   // Function to load more data
   const loadMoreData = useCallback(async () => {
     if (!grid) return;
+
+    // ❌ If is fetching, return null
+    if (isFetchingRef.current) return;
+
     console.log("LOAD MORE DATA");
     isFetchingRef.current = true;
 
@@ -75,8 +81,8 @@ export default function Home() {
         controller.abort();
       }, 30000);  // 30 segundos timeout
 
-      console.log('[FETCH] Calling endpoint http://localhost:8000/api/stream?table=seguimientoventas&offset='+grid.rowManager.rows.length+'&limit=50');
-      const response = await fetch('http://localhost:8000/api/stream?table=seguimientoventas&offset='+grid.rowManager.rows.length+'&limit=50', {
+      console.log('[FETCH] Calling endpoint http://localhost:8000/api/stream?table=seguimientoventas&offset='+grid.rowManager.rows.length+`&limit=50&filters=${filterParams}`);
+      const response = await fetch('http://localhost:8000/api/stream?table=seguimientoventas&offset='+grid.rowManager.rows.length+`&limit=50&filters=${filterParams}`, {
         signal
       });
       
@@ -180,6 +186,8 @@ export default function Home() {
       if (error instanceof Error) {
         console.error('[ERROR DETAILS]', error.name, error.message, error.stack);
       }
+    } finally {
+      isFetchingRef.current = false; // process ended
     }
   }, [grid]);
 
@@ -201,7 +209,7 @@ export default function Home() {
       
       timeoutId = setTimeout(() => {
         console.log("Reached bottom! Triggering load more...");
-        if (loadMoreRef.current) {
+        if (loadMoreRef.current && !isFetchingRef.current) {
           loadMoreRef.current();
         }
       }, 100); // 100ms debounce
@@ -216,7 +224,7 @@ export default function Home() {
 
     const loadAndInitialize = async () => {
       try {
-        const gridFirstData = await loadWholeDataFromBackend(0, 25);
+        const gridFirstData = await loadWholeDataFromBackend(0, 25, filterParams);
         const dataColumns = await getJSONColumns(gridFirstData);
         
         await new Promise(resolve => setTimeout(resolve, 0));
