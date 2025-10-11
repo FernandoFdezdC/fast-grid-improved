@@ -60,10 +60,13 @@ export class StringCell implements CellComponent {
 
     this.setOffset(this._offset, true);
     this.setContent(text);
+    this.el.title = String(text);
   }
 
   setContent(text: string | number) {
-    this.el.innerText = String(text);
+    const str = String(text);
+    this.el.innerText = str;
+    this.el.title = str; // ✅ keep tooltip in sync
   }
   setOffset(offset: number, force: boolean = false) {
     if (force || offset !== this._offset) {

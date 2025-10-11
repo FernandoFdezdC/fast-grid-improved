@@ -39,7 +39,8 @@ export default function Home() {
   const loadMoreRef = useRef<(() => void) | null>(null);
   const [containerReady, setContainerReady] = useState(false);
 
-  let filterParams = "%26Producto%3D0+min+%252B+0MB";
+  // let filterParams = "%26Producto%3D0+min+%252B+0MB";
+  let filterParams = "";
 
   useEffect(() => {
     const observer = new ResizeObserver((entries) => {
