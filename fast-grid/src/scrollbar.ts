@@ -208,73 +208,73 @@ export class Scrollbar {
     e.preventDefault();
     e.stopPropagation();
     document.body.style.setProperty("cursor", "grabbing", "important");
-    document.addEventListener("mousemove", this.onThumbDragY);
-    document.addEventListener("mouseup", this.onThumbMouseUpY);
-  };
-  onThumbDragY = (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+
     const state = this.grid.getState();
+    const startClientY = e.clientY;
+    const startThumb = state.thumbOffsetY;
+    const maxThumb = Math.max(0, this.trackY.clientHeight - state.thumbSizeY);
+    const scrollableHeight = state.scrollableHeight;
 
-    this.transientScrollOffsetY +=
-      // TODO(gab): figure out the 1.5 lol. works perfectly somehow
-      (e.movementY / this.grid.viewportHeight) * state.tableHeight;
-    if (this.isScrolling) {
-      return;
-    }
+    const onMove = (moveEv: MouseEvent) => {
+      moveEv.preventDefault();
+      const delta = moveEv.clientY - startClientY;
+      const newThumb = Math.max(0, Math.min(startThumb + delta, maxThumb));
 
-    this.isScrolling = true;
-    window.requestAnimationFrame(() => {
-      this.scrollBy(undefined, this.transientScrollOffsetY);
-      this.isScrolling = false;
-      this.transientScrollOffsetY = 0;
-    });
-  };
-  onThumbMouseUpY = () => {
-    document.body.style.removeProperty("cursor");
-    document.removeEventListener("mousemove", this.onThumbDragY);
-    document.removeEventListener("mouseup", this.onThumbMouseUpY);
-    this.isScrolling = false;
-    if (this.transientScrollOffsetY > 0) {
-      this.scrollBy(undefined, this.transientScrollOffsetY);
-    }
-    this.transientScrollOffsetY = 0;
+      // Translate thumb visually immediately
+      this.translateThumbY(newThumb);
+
+      // Convert thumb position to grid offset
+      const newOffsetY = maxThumb === 0 ? 0 : (newThumb / maxThumb) * scrollableHeight;
+      this.setScrollOffsetY(newOffsetY);
+
+      // Render rows immediately for immediate feedback
+      this.grid.renderViewportRows();
+    };
+
+    const onUp = () => {
+      document.body.style.removeProperty("cursor");
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   };
   onThumbMouseDownX = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     document.body.style.setProperty("cursor", "grabbing", "important");
-    document.addEventListener("mousemove", this.onThumbDragX);
-    document.addEventListener("mouseup", this.onThumbMouseUpX);
-  };
-  onThumbDragX = (e: MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    const state = this.grid.getState();
-    this.transientScrollOffsetX +=
-      // TODO(gab): figure out the 1.5 lol. works perfectly somehow
-      (e.movementX / this.grid.viewportWidth) * state.tableWidth;
-    if (this.isScrolling) {
-      return;
-    }
 
-    this.isScrolling = true;
-    window.requestAnimationFrame(() => {
-      this.scrollBy(this.transientScrollOffsetX, undefined);
-      this.isScrolling = false;
-      this.transientScrollOffsetX = 0;
-    });
-  };
-  onThumbMouseUpX = () => {
-    document.body.style.removeProperty("cursor");
-    document.removeEventListener("mousemove", this.onThumbDragX);
-    document.removeEventListener("mouseup", this.onThumbMouseUpX);
-    this.isScrolling = false;
-    // NOTE(gab): makes sure the last cancelled scroll events are applied, if any
-    if (this.transientScrollOffsetX > 0) {
-      this.scrollBy(this.transientScrollOffsetX, undefined);
-    }
-    this.transientScrollOffsetX = 0;
+    const state = this.grid.getState();
+    const startClientX = e.clientX;
+    const startThumb = state.thumbOffsetX;
+    const maxThumb = Math.max(0, this.grid.viewportWidth - state.thumbSizeX);
+    const scrollableWidth = state.scrollableWidth;
+
+    const onMove = (moveEv: MouseEvent) => {
+      moveEv.preventDefault();
+      const delta = moveEv.clientX - startClientX;
+      const newThumb = Math.max(0, Math.min(startThumb + delta, maxThumb));
+
+      // Translate thumb visually immediately
+      this.translateThumbX(newThumb);
+
+      // Convert thumb position to grid offset
+      const newOffsetX = maxThumb === 0 ? 0 : (newThumb / maxThumb) * scrollableWidth;
+      this.setScrollOffsetX(newOffsetX);
+
+      // Render cells right away for immediate feedback
+      this.grid.renderViewportCells();
+    };
+
+    const onUp = () => {
+      document.body.style.removeProperty("cursor");
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   };
   onTrackMouseMoveY = (e: MouseEvent) => {
     e.preventDefault();
@@ -284,19 +284,87 @@ export class Scrollbar {
   };
   onTrackMouseDownY = (e: MouseEvent) => {
     e.preventDefault();
+
     const state = this.grid.getState();
-    const relativeOffset =
-      (e.offsetY / this.grid.viewportHeight) * state.tableHeight;
-    this.setScrollOffsetY(relativeOffset);
+    const trackRect = this.trackY.getBoundingClientRect();
+    const clickPos = e.clientY - trackRect.top; // pixels from top of track
+    const thumbHalf = state.thumbSizeY / 2;
+    const targetThumb = Math.max(0, Math.min(clickPos - thumbHalf, this.trackY.clientHeight - state.thumbSizeY));
+
+    // Jump to clicked position immediately
+    const newOffsetY = (this.trackY.clientHeight - state.thumbSizeY) === 0
+      ? 0
+      : (targetThumb / (this.trackY.clientHeight - state.thumbSizeY)) * state.scrollableHeight;
+
+    this.setScrollOffsetY(newOffsetY);
     this.grid.renderViewportRows();
+    this.translateThumbY(targetThumb);
+
+    // Start dragging immediately
+    const startClientY = e.clientY;
+    const startThumb = targetThumb;
+    const maxThumb = Math.max(0, this.trackY.clientHeight - state.thumbSizeY);
+    const scrollableHeight = state.scrollableHeight;
+
+    const onMove = (moveEv: MouseEvent) => {
+      moveEv.preventDefault();
+      const delta = moveEv.clientY - startClientY;
+      const newThumb = Math.max(0, Math.min(startThumb + delta, maxThumb));
+      this.translateThumbY(newThumb);
+      const newOff = maxThumb === 0 ? 0 : (newThumb / maxThumb) * scrollableHeight;
+      this.setScrollOffsetY(newOff);
+      this.grid.renderViewportRows();
+    };
+
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   };
   onTrackMouseDownX = (e: MouseEvent) => {
     e.preventDefault();
+
     const state = this.grid.getState();
-    const relativeOffset =
-      (e.offsetX / this.grid.viewportWidth) * state.tableWidth;
-    this.setScrollOffsetX(relativeOffset);
+    const trackRect = this.trackX.getBoundingClientRect();
+    const clickPos = e.clientX - trackRect.left; // pixels from left of track
+    const thumbHalf = state.thumbSizeX / 2;
+    const targetThumb = Math.max(0, Math.min(clickPos - thumbHalf, this.grid.viewportWidth - state.thumbSizeX));
+
+    // Jump to clicked position immediately
+    const newOffsetX = (this.grid.viewportWidth - state.thumbSizeX) === 0
+      ? 0
+      : (targetThumb / (this.grid.viewportWidth - state.thumbSizeX)) * state.scrollableWidth;
+
+    this.setScrollOffsetX(newOffsetX);
     this.grid.renderViewportCells();
+    this.translateThumbX(targetThumb);
+
+    // Start dragging immediately (so moving mouse continues)
+    const startClientX = e.clientX;
+    const startThumb = targetThumb;
+    const maxThumb = Math.max(0, this.grid.viewportWidth - state.thumbSizeX);
+    const scrollableWidth = state.scrollableWidth;
+
+    const onMove = (moveEv: MouseEvent) => {
+      moveEv.preventDefault();
+      const delta = moveEv.clientX - startClientX;
+      const newThumb = Math.max(0, Math.min(startThumb + delta, maxThumb));
+      this.translateThumbX(newThumb);
+      const newOff = maxThumb === 0 ? 0 : (newThumb / maxThumb) * scrollableWidth;
+      this.setScrollOffsetX(newOff);
+      this.grid.renderViewportCells();
+    };
+
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   };
   translateThumbY = (offset: number) => {
     this.thumbY.style.transform = `translateY(${offset}px)`;
