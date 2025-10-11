@@ -77,7 +77,7 @@ export default function Home() {
     };
 
     loadAndInitialize();
-  }, [rowCount, containerReady]); // Añadir containerReady como dependencia
+  }, [rowCount, containerReady]); // Add containerReady as dependency
 
   useEffect(() => {
     if (grid == null || !stressTest) return;

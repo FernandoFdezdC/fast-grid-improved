@@ -29,6 +29,7 @@ export class RowComponent {
   cellComponentMap: Record<string, CellComponent>;
   grid: Grid;
   absoluteIndex: number;
+  resizeHandles: HTMLDivElement[] = [];
 
   constructor(
     grid: Grid,
@@ -55,7 +56,7 @@ export class RowComponent {
 
     this.CellRenderer = CellRenderer;
 
-    // 👇 Añadir !important para sobrescribir cualquier estilo conflictivo
+    // 👇 Add !important to overwrite any conflicting style
     if (CellRenderer === StringCell) {
       this.el.style.cssText = `
         position: absolute;
@@ -88,16 +89,22 @@ export class RowComponent {
     this._offset = offset;
   }
   renderCells() {
+    // remove old resize handles (we recreate them each render)
+    for (const h of this.resizeHandles) {
+      if (this.el.contains(h)) this.el.removeChild(h);
+    }
+    this.resizeHandles = [];
+    
     const state = this.grid.getState();
 
-    let currentOffset = state.cellOffset; // Usar el offset calculado basado en anchos reales
+    let currentOffset = state.cellOffset; // Use calculated offset based on actual widths
     let accumulatedWidth = 0;
 
     const renderCells: Record<string, true> = {};
     for (let i = state.startCell; i < state.endCell; i++) {
         const cell = this.cells[i];
         renderCells[cell.id] = true;
-        accumulatedWidth += this.grid.columnWidths[i]; // Acumular ancho real
+        accumulatedWidth += this.grid.columnWidths[i]; // Accumulate real width
     }
 
     const removeCells: CellComponent[] = [];
@@ -109,26 +116,77 @@ export class RowComponent {
       removeCells.push(cell);
     }
 
-    // Resetear el acumulador para el cálculo preciso
+    // Reset accumulator for accurate calculation
     currentOffset = state.cellOffset;
     
     for (let i = state.startCell; i < state.endCell; i++) {
       const cell = this.cells[i]!;
-      const columnWidth = this.grid.columnWidths[i]; // Ancho real de la columna
+      const columnWidth = this.grid.columnWidths[i]; // Actual column width
 
       const existingCell = this.cellComponentMap[cell.id];
       if (existingCell != null) {
           existingCell.setOffset(currentOffset);
-          existingCell.el.style.width = `${columnWidth}px`; // Actualizar ancho
-          currentOffset += columnWidth; // Mover offset
+          existingCell.el.style.width = `${columnWidth}px`; // Update width
+          currentOffset += columnWidth; // Move offset
+
+          // --- create a resize handle at the right edge of this column ---
+          const HANDLE_WIDTH = 12;
+          const HANDLE_HALF = HANDLE_WIDTH / 2;
+
+          // Only create a handle if there is a next column in the model (so there is a boundary)
+          if (i < this.grid.columnWidths.length - 1) {
+            const boundaryX = currentOffset; // right edge (relative to this.el)
+            const handle = document.createElement("div");
+            Object.assign(handle.style, {
+              position: "absolute",
+              top: "0px",
+              left: `${boundaryX - HANDLE_HALF}px`,
+              width: `${HANDLE_WIDTH}px`,
+              height: "100%",
+              cursor: "col-resize",
+              zIndex: "100",               // above cells
+              backgroundColor: "transparent",
+            });
+
+            // capture the column index for this handle
+            const colIndex = i;
+
+            handle.addEventListener("mousedown", (ev: MouseEvent) => {
+              ev.preventDefault();
+              const startX = ev.clientX;
+              const startWidth = this.grid.columnWidths[colIndex];
+
+              const onMouseMove = (moveEv: MouseEvent) => {
+                const dx = moveEv.clientX - startX;
+                const newWidth = Math.max(30, Math.round(startWidth + dx)); // min 30px
+                this.grid.columnWidths[colIndex] = newWidth;
+                // Re-render rows to reflect new width
+                this.grid.renderViewportCells();
+              };
+
+              const onMouseUp = () => {
+                window.removeEventListener("mousemove", onMouseMove);
+                window.removeEventListener("mouseup", onMouseUp);
+                document.body.style.cursor = "";
+              };
+
+              window.addEventListener("mousemove", onMouseMove);
+              window.addEventListener("mouseup", onMouseUp);
+              document.body.style.cursor = "col-resize";
+            });
+
+            this.el.appendChild(handle);
+            this.resizeHandles.push(handle);
+          }
+
           continue;
       }
 
       const reuseCell = removeCells.pop();
       if (reuseCell != null) {
         delete this.cellComponentMap[reuseCell.id];
-        reuseCell.reuse(cell.id, currentOffset, cell.v, i); // Pasar índice
-        reuseCell.el.style.width = `${columnWidth}px`; // Forzar actualización
+        reuseCell.reuse(cell.id, currentOffset, cell.v, i); // Pass index
+        reuseCell.el.style.width = `${columnWidth}px`; // Force update
         this.cellComponentMap[reuseCell.id] = reuseCell;
         currentOffset += columnWidth;
         continue;

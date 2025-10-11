@@ -235,7 +235,7 @@ export class RowManager {
   };
 }
 
-// Nuevo tipo de evento para añadir filas
+// New event type for adding rows
 export type AddRowsEvent = {
   type: "add-rows";
   rows: Rows;
