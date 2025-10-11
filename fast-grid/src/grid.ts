@@ -219,17 +219,17 @@ export class Grid {
     let endCellIdx = startCell;
     low = startCell;
     high = starts.length - 1;
-    while (low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      if (starts[mid] <= endPosition) {
-        endCellIdx = mid;
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
+
+    // scan forward until column start is beyond viewport right edge
+    while (endCellIdx < this.numCols && starts[endCellIdx + 1] < this.offsetX + this.viewportWidth) {
+        endCellIdx++;
     }
-    const cellsPerRow = (endCellIdx - startCell) + 2; // +1 original +1 buffer
-    const endCell = Math.min(startCell + cellsPerRow, this.numCols);
+
+    // include a buffer column so resizing wide columns doesn’t hide adjacent ones
+    endCellIdx = Math.min(endCellIdx + 1, this.numCols - 1);
+
+    const cellsPerRow = endCellIdx - startCell + 1;
+    const endCell = endCellIdx + 1;
 
     // start to end of rows to render, along with the row offset to simulate scrolling
     const startRow = Math.floor(this.offsetY / ROW_HEIGHT);
