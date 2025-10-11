@@ -89,13 +89,14 @@ export class HeaderCell implements CellComponent {
   index: number;
   textDisplay: HTMLDivElement;
   _offset: number;
+  dragging: boolean = false;
 
   constructor(id: number,
-      offset: number,
-      text: string | number,
-      grid: Grid,
-      index: number
-    ) {
+    offset: number,
+    text: string | number,
+    grid: Grid,
+    index: number
+  ) {
     this.id = id;
     this._offset = offset;
     this.grid = grid;
@@ -157,8 +158,51 @@ export class HeaderCell implements CellComponent {
 
     this.syncToFilter();
     this.setOffset(this._offset, true);
+
+    // Resize handle that resizes columns with mouse dragging
+    const resizeHandle = document.createElement("div");
+    Object.assign(resizeHandle.style, {
+      width: "12px",          // wider area for easier dragging
+      cursor: "col-resize",
+      position: "absolute",
+      top: "0",
+      right: "-6px",           // center the handle around the edge
+      height: "100%",
+      zIndex: "10",
+      backgroundColor: "transparent", // invisible but clickable
+    });
+    this.el.appendChild(resizeHandle);
+
+    let startX: number;
+    let startWidth: number;
+
+    resizeHandle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      this.dragging = true; // start dragging
+      startX = e.clientX;
+      startWidth = this.el.offsetWidth;
+
+      const onMouseMove = (e: MouseEvent) => {
+        const dx = e.clientX - startX;
+        const newWidth = Math.max(30, startWidth + dx);
+        this.el.style.width = newWidth + "px";
+        this.grid.columnWidths[this.index] = newWidth;
+        this.grid.renderViewportCells();
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+        setTimeout(() => (this.dragging = false), 0); // small delay to prevent click after drag
+      };
+
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    });
   }
   private onHeaderClick = () => {
+    if (this.dragging) return; // ignore clicks if dragging
+
     const idx = this.grid.rowManager.view.sort.findIndex(
       (sort) => sort.column === this.index
     );
@@ -296,6 +340,47 @@ export class FilterCell implements CellComponent {
 
     this.syncToFilter();
     this.setOffset(this._offset, true);
+
+    // Resize handle that resizes columns with mouse dragging
+    const resizeHandle = document.createElement("div");
+    Object.assign(resizeHandle.style, {
+      width: "12px",          // wider area for easier dragging
+      cursor: "col-resize",
+      position: "absolute",
+      top: "0",
+      right: "-6px",           // center the handle around the edge
+      height: "100%",
+      zIndex: "10",
+      backgroundColor: "transparent", // invisible but clickable
+    });
+    this.el.appendChild(resizeHandle);
+
+    let startX: number;
+    let startWidth: number;
+
+    resizeHandle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      startX = e.clientX;
+      startWidth = this.el.offsetWidth;
+
+      const onMouseMove = (e: MouseEvent) => {
+        const dx = e.clientX - startX;
+        const newWidth = Math.max(30, startWidth + dx); // min width 30px
+        this.el.style.width = newWidth + "px";
+        this.grid.columnWidths[this.index] = newWidth;
+
+        // Re-render rows to reflect new width
+        this.grid.renderViewportCells();
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+      };
+
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    });
   }
   private onInputChange = () => {
     if (this.input.value === "") {
