@@ -158,10 +158,17 @@ export class RowComponent {
 
               const onMouseMove = (moveEv: MouseEvent) => {
                 const dx = moveEv.clientX - startX;
-                const newWidth = Math.max(30, Math.round(startWidth + dx)); // min 30px
+                const newWidth = Math.max(30, Math.round(startWidth + dx));
                 this.grid.columnWidths[colIndex] = newWidth;
-                // Re-render rows to reflect new width
+
+                // 1) Re-render cells
                 this.grid.renderViewportCells();
+
+                // 2) Recompute grid state to update scrollableWidth
+                this.grid.getState();
+
+                // 3) Refresh horizontal scrollbar
+                this.grid.scrollbar.refreshThumb();
               };
 
               const onMouseUp = () => {
